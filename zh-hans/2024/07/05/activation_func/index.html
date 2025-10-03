@@ -1,0 +1,890 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/zh-hans/img/fluid.png">
+  <link rel="icon" href="/zh-hans/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="kq">
+  <meta name="keywords" content="hexo, blog, ai, artificial intelligence">
+  
+    <meta name="description" content="常见激活函数的介绍激活函数的作用 把神经元的输出拉回在一定范围内. 给模型添加非线性因素. 因为线性模型的表达能力不够, 多层线性叠加还是线性, 相当于一层网络$y&#x3D;Mx+b$. 但是有些模型只使用线性函数是无法表示的.   比如下面这个简单的图, 想用一个函数把蓝色和红色分开, 只使用直线无法分开, 需要添加非线性因素: 什么是线性函数:首先理解下‘线性函数’这个基本概念, 之所以想强调这点,">
+<meta property="og:type" content="article">
+<meta property="og:title" content="各种激活函数的介绍">
+<meta property="og:url" content="https://kangkang37.github.io/zh-hans/2024/07/05/activation_func/index.html">
+<meta property="og:site_name" content="KQ&#39;s AI Blog">
+<meta property="og:description" content="常见激活函数的介绍激活函数的作用 把神经元的输出拉回在一定范围内. 给模型添加非线性因素. 因为线性模型的表达能力不够, 多层线性叠加还是线性, 相当于一层网络$y&#x3D;Mx+b$. 但是有些模型只使用线性函数是无法表示的.   比如下面这个简单的图, 想用一个函数把蓝色和红色分开, 只使用直线无法分开, 需要添加非线性因素: 什么是线性函数:首先理解下‘线性函数’这个基本概念, 之所以想强调这点,">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/05/activation_func/activation01.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/05/activation_func/activation02.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/05/activation_func/activation03.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/05/activation_func/activation04.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/05/activation_func/activation05.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/05/activation_func/activation06.png">
+<meta property="article:published_time" content="2024-07-06T04:28:39.000Z">
+<meta property="article:modified_time" content="2025-03-31T17:49:20.639Z">
+<meta property="article:author" content="kq">
+<meta property="article:tag" content="ML">
+<meta property="article:tag" content="激活函数">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://kangkang37.github.io/zh-hans/2024/07/05/activation_func/activation01.png">
+  
+  
+  
+  <title>各种激活函数的介绍 - KQ&#39;s AI Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/zh-hans/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/zh-hans/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/zh-hans/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"kangkang37.github.io","root":"/zh-hans/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Oy95QsXXN5Dq2RLD8evjzYEP-MdYXbMMI","app_key":"g2P9HRXegX1XhaV3or2pH3zk","server_url":null,"path":"window.location.pathname","ignore_local":true}},"search_path":"/zh-hans/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/zh-hans/js/utils.js" ></script>
+  <script  src="/zh-hans/js/color-schema.js" ></script>
+  
+
+  
+
+  
+    <!-- Google tag (gtag.js) -->
+    <script async>
+      if (!Fluid.ctx.dnt) {
+        Fluid.utils.createScript("https://www.googletagmanager.com/gtag/js?id=", function() {
+          window.dataLayer = window.dataLayer || [];
+          function gtag() {
+            dataLayer.push(arguments);
+          }
+          gtag('js', new Date());
+          gtag('config', '');
+        });
+      }
+    </script>
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<script src="/zh-hans/js/hexo_resize_image.js"></script> 
+<!-- ## -->
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/zh-hans/">
+      <strong>KQ&#39;s AI Blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="https://kangkang37.github.io" target="_self">
+                <i class="iconfont icon-language"></i>
+                <span>language</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/zh-hans/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="各种激活函数的介绍"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        kq
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-07-05 21:28" pubdate>
+          2024年7月5日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          12 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="leancloud-page-views"></span> 次
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">各种激活函数的介绍</h1>
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    本文最后更新于 2025年3月31日上午10点49分
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="常见激活函数的介绍"><a href="#常见激活函数的介绍" class="headerlink" title="常见激活函数的介绍"></a>常见激活函数的介绍</h1><h2 id="激活函数的作用"><a href="#激活函数的作用" class="headerlink" title="激活函数的作用"></a>激活函数的作用</h2><ol>
+<li>把神经元的输出拉回在一定范围内.</li>
+<li>给模型添加非线性因素. 因为线性模型的表达能力不够, 多层线性叠加还是线性, 相当于一层网络$y=Mx+b$. 但是有些模型只使用线性函数是无法表示的. </li>
+</ol>
+<p>比如下面这个简单的图, 想用一个函数把蓝色和红色分开, 只使用直线无法分开, 需要添加非线性因素:<br><img src="/zh-hans/2024/07/05/activation_func/activation01.png" srcset="/zh-hans/img/loading.gif" lazyload alt="图1"></p>
+<h2 id="什么是线性函数"><a href="#什么是线性函数" class="headerlink" title="什么是线性函数:"></a>什么是线性函数:</h2><p>首先理解下‘线性函数’这个基本概念, 之所以想强调这点, 是因为在一次面试时面试官问我“Relu激活函数是两条射线构成, 为什么不是线性函数?” 我当时没回答出来-.-</p>
+<p>线性函数是一种线性映射, 是能维持向量加法和标量乘法的映射. 也就是能满足以下公式的$f(x)$是线性函数: </p>
+<script type="math/tex; mode=display">
+f(x+y) = f(x) + f(y)  \\
+f(\alpha x) = \alpha f(x)</script><p>其中$\alpha$是标量, x和y是向量. </p>
+<p>之所以强调x和y是向量, 我们看下面这个例子: 假设现在有</p>
+<script type="math/tex; mode=display">
+f(x) = 2x+3</script><p>这个函数f(x)是线性函数, 但是: $f(2x)=2(2x)+3=4x+3$, $2f(x)=2(2x+3)=4x+6$, 显然$f(2x)!=2f(x)$, 为什么这个函数是线性函数, 却不满足标量乘法呢?  </p>
+<p>如果只是单纯的把变量x考虑为标量, 确实$f(2x)!=2f(x)$, 但是这里输入的变量x是向量, 判断向量相等的条件是: 方向相同且长度相等. 如果从向量角度看, 是满足$f(2x)==2f(x)$的.</p>
+<p>这里输入向量x是$x=[x_1]$, 即只有一个标量$x_1$的1*1大小的向量. $f(2x)=2(2x)+3=4x+3$表示把向量的长度扩大四倍后向右平移3格, $2f(x)=2(2x+3)=4x+6$表示把向量长度扩大四倍后向6平移6个. 所以从向量的角度看, 最后得到的向量都是通过向量4x平移得到, 方向相同且长度相同, 满足$f(2x)==2f(x)$. </p>
+<p><strong>ReLu激活函数不是线性函数</strong><br>ReLu公式: $f(x)=Max(x,0)$, 如何判断这个f(x)是否为线性的?<br>首先看其是否满足标量乘法$f(\alpha x) = \alpha f(x)$: x小于0时都是0相等, x大于0时$f(x)=x$, $f(\alpha x)=\alpha x = \alpha f(x)$ 相等. 所以满足标量乘法.<br>下面看是否满足向量乘法$f(x+y) = f(x)+f(y)$: 如果$x=2$ $y=-2$, $f(x)=2$, $f(y)=0$, $f(x+y)=f(0)=0$, $f(x+y)!=f(x)+f(y)$, 不满足向量乘法.<br>所以ReLu激活函数是非线性.   </p>
+<h2 id="常见激活函数"><a href="#常见激活函数" class="headerlink" title="常见激活函数"></a>常见激活函数</h2><h3 id="sigmoid函数"><a href="#sigmoid函数" class="headerlink" title="sigmoid函数"></a>sigmoid函数</h3><script type="math/tex; mode=display">
+f(x)= \frac{1}{1+e^{-x}}</script><p><img src="/zh-hans/2024/07/05/activation_func/activation02.png" srcset="/zh-hans/img/loading.gif" lazyload alt="sigmoid激活函数图像"><br>输出值在0~1之间, 对每个神经元的输出进行归一化. 一般地, 二元分类问题会用sigmoid作为输出层.</p>
+<p>sigmoid缺点:  </p>
+<ul>
+<li>容易梯度消失;</li>
+<li>指数运算, 速度慢;</li>
+<li>输出不是以0为中心;</li>
+</ul>
+<h3 id="softmax函数"><a href="#softmax函数" class="headerlink" title="softmax函数"></a>softmax函数</h3><script type="math/tex; mode=display">
+Softmax(x_i) = \frac{e^{x_i}}{\sum_{j=1}^C e^{x_j}}</script><p>softmax是sigmoid在多分类上的推广, softmax可以用在多分类问题的最后一层.  </p>
+<p>单个输出节点的二分类问题一般在输出节点上使用Sigmoid函数，拥有两个及其以上的输出节点的二分类或者多分类问题一般在输出节点上使用Softmax函数。</p>
+<h3 id="tanh激活函数"><a href="#tanh激活函数" class="headerlink" title="tanh激活函数"></a>tanh激活函数</h3><script type="math/tex; mode=display">
+f(x) = tanh(x) = \frac{2}{1+e^{-2x}} - 1</script><p><img src="/zh-hans/2024/07/05/activation_func/activation03.png" srcset="/zh-hans/img/loading.gif" lazyload alt="tanh激活函数"></p>
+<h3 id="Relu激活函数"><a href="#Relu激活函数" class="headerlink" title="Relu激活函数"></a>Relu激活函数</h3><script type="math/tex; mode=display">
+f(x)=max(x,0)</script><p><img src="/zh-hans/2024/07/05/activation_func/activation04.png" srcset="/zh-hans/img/loading.gif" lazyload alt="Relu激活函数"></p>
+<p>ReLU对小于0的值全部抑制为0；对于正数则直接输出，这是一种单边抑制的特性，而这种单边抑制来源于生物学。<br>在反向传播的过程中，它既不会放大梯度，造成梯度爆炸；也不会缩小梯度，造成梯度消失的现象。</p>
+<p>优点：  </p>
+<ol>
+<li>输入为正时，没有梯度饱和的问题。（就是导数趋近于0的问题）</li>
+<li>计算快，线性计算。 </li>
+<li>增加网络的稀疏性，当x&lt;0,输出为0，神经元为0的越来越多，网络稀疏，网络协同性被破坏，迫使网络学习更加一般性的特征，泛化能力变强。这也是dropout的原理。减少了参数的相互依存关系，缓解了过拟合问题的发生。和符合生物神经元的单边抑制性。</li>
+</ol>
+<p>缺点：  </p>
+<ol>
+<li>输出不是以0为中心。  </li>
+<li>relu还会有梯度爆炸的问题，因为上限是inf。</li>
+<li>输入为负数，relu失效，梯度完全为0，导致一些节点‘不可逆转的死亡’。<br>如果开始选定的学习率比较大的话很可能40%的神经元在训练开始的时候就会”死亡”，因此使用ReLU激活函数的时候，需要选定一个合适的学习率让这种情况发生的概率降低；</li>
+</ol>
+<p><strong> relu在0处不可导怎么办: </strong><br>我们可以人为提供一个伪梯度, 自己定义在0处的导数为0, 或者0~1之间的某个值.</p>
+<h3 id="Leaky-Relu激活函数"><a href="#Leaky-Relu激活函数" class="headerlink" title="Leaky Relu激活函数"></a>Leaky Relu激活函数</h3><script type="math/tex; mode=display">
+f(x) = max(\alpha x, x), \ \alpha=0.01</script><h3 id="Swish激活函数"><a href="#Swish激活函数" class="headerlink" title="Swish激活函数"></a>Swish激活函数</h3><script type="math/tex; mode=display">
+f(x) = x * sigmoid(x) = \frac{x}{1+e^{-x}}</script><p><img src="/zh-hans/2024/07/05/activation_func/activation05.png" srcset="/zh-hans/img/loading.gif" lazyload alt="swish激活函数图像"><br>与 ReLU 相比，尽管图形非常相似，Swish 的性能却要稍好一些。然而，ReLU 在 x=0 时会突然发生改变，而 Swish 与此不同，它不会在某个点上突然改变，这使得训练时 Swish 更容易收敛。</p>
+<p>但是，Swish 的缺点是它的计算成本很高。</p>
+<h3 id="ELU激活函数"><a href="#ELU激活函数" class="headerlink" title="ELU激活函数"></a>ELU激活函数</h3><script type="math/tex; mode=display">
+f(x) = 
+\begin{cases}
+x, \quad x \geq 0 \\
+\alpha (e^{x}-1), \quad x<0
+\end{cases}</script><h3 id="GELU激活函数"><a href="#GELU激活函数" class="headerlink" title="GELU激活函数"></a>GELU激活函数</h3><p>GELU全称是Gaussian Error Linear Unit, 在transformer或者bert中很常用的激活函数. 公式: </p>
+<script type="math/tex; mode=display">
+GELU(x) = x * \Phi (x) = x * P(X\leq x)</script><p>近似数学公式: </p>
+<script type="math/tex; mode=display">
+GELU(x) = 0.5x(1+tanh(\sqrt{\frac{2}{\pi}}(x+0.044715x^3)))</script><p><img src="/zh-hans/2024/07/05/activation_func/activation06.png" srcset="/zh-hans/img/loading.gif" lazyload alt="GELU近似公式的图像"></p>
+<p>GELU的含义:<br>GELU可以看做dropout, relu, zoneout的综合, 对输入变量x乘以一个0和1组成的mask, 这个mask服从伯努利分布(即0-1分布): </p>
+<script type="math/tex; mode=display">
+mask=bernoulli(\Phi(x))=bernoulli(P(X\leq x))</script><p>其中输入的x服从正态分布, $\Phi(x)=P(X\leq x)$是x的累积分布函数, 即服从标准正态分布的累积分布函数. 因为神经元的输入x往往遵循正态分布, 存在batch normalization. </p>
+<p><strong>为何说GELU可以看做dropout, relu, zoneout的综合</strong><br>RELU当x小于等于0是舍弃它, 当x大于0时保留; 而dropout会随机的给x乘上0; zoneout是RNN时间维度上的“dropout”，要么维持前一个时刻的hidden vector，要么按照一般的样子更新。</p>
+<p>像RELU等分段线性函数在间断点不可导, 并且它们作为确定性非线性函数, 需要额外给网络引入<u>随机正则化</u>来提高模型的泛化性. 如果一个激活函数本身就具有随机正则性, 是不是就能同时保持模型的泛化性和非线性? 为此提出的GELU激活函数同时具有随机正则性和非线性.   </p>
+<p>因为GELU激活依赖于输入本身, 换句话说, <u>对x乘以0还是1取决于x自身</u>. 输入的x越大, 累积分布函数$\Phi(x)$就越大, 表示mask更有可能为1, 被保留; 反之x越小, mask更有可能为0, 被丢弃.</p>
+<h2 id="激活函数的特点"><a href="#激活函数的特点" class="headerlink" title="激活函数的特点:"></a>激活函数的特点:</h2><ul>
+<li>激活函数的输出最好是关于0对称, 这样梯度不会朝着特定方向移动. </li>
+<li>计算成本要小.</li>
+<li>要有可微性.</li>
+<li>会存在梯度消失问题. 多层网络嵌套在一起, 链式求导法则, 意味着多个0~1之间的值相乘, 梯度会越来越小.</li>
+<li>梯度饱和问题. 常见的激活函数例如sigmoid和tanh, 在自变量很小或者很大时, 函数曲线基本和x轴平行, 梯度变化很小, 导致模型训练很慢.</li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/zh-hans/categories/ML%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" class="category-chain-item">ML基础知识</a>
+  
+  
+    <span>></span>
+    
+  <a href="/zh-hans/categories/ML%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%BF%80%E6%B4%BB%E5%87%BD%E6%95%B0/" class="category-chain-item">激活函数</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/zh-hans/tags/ML/" class="print-no-link">#ML</a>
+      
+        <a href="/zh-hans/tags/%E6%BF%80%E6%B4%BB%E5%87%BD%E6%95%B0/" class="print-no-link">#激活函数</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>各种激活函数的介绍</div>
+      <div>https://kangkang37.github.io/zh-hans/2024/07/05/activation_func/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>kq</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年7月5日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/zh-hans/2024/07/08/pytorch02_GD/" title="pytorch面试题II：梯度更新的代码实现">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">pytorch面试题II：梯度更新的代码实现</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/zh-hans/2024/07/05/optimizer/" title="优化器介绍I——BGD/SGD/MBGD">
+                        <span class="hidden-mobile">优化器介绍I——BGD/SGD/MBGD</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="" ><span>Kangkang</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/kangkang37" target="_blank" rel="nofollow noopener"><span>GitHub</span></a>     
+    </div>
+  
+  
+    <div class="statistics">
+  
+  
+
+  
+    
+      <span id="leancloud-site-pv-container" style="display: none">
+        点击量: 
+        <span id="leancloud-site-pv"></span>
+         ,
+      </span>
+    
+    
+      <span id="leancloud-site-uv-container" style="display: none">
+        访问人数: 
+        <span id="leancloud-site-uv"></span>
+         
+      </span>
+    
+    
+
+  
+</div>
+
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/zh-hans/js/events.js" ></script>
+<script  src="/zh-hans/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/zh-hans/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            loader : {
+              load: ['ui/lazy']
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.2/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/zh-hans/js/leancloud.js" ></script>
+
+  <script  src="/zh-hans/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/zh-hans/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>

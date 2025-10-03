@@ -1,0 +1,878 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/zh-hans/img/fluid.png">
+  <link rel="icon" href="/zh-hans/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="kq">
+  <meta name="keywords" content="hexo, blog, ai, artificial intelligence">
+  
+    <meta name="description" content="Double-Win Quant 论文精读今天读这篇论文: Double-Win Quant: Aggressively Winning Robustness of Quantized Deep Neural Networks via Random Precision Training and Inference 官方代码在这里: GitHub Rice-Eic Double-Win-Quant">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Double-Win-Quant 论文精读">
+<meta property="og:url" content="https://kangkang37.github.io/zh-hans/2024/07/10/papers-paper04-double-win-quant/index.html">
+<meta property="og:site_name" content="KQ&#39;s AI Blog">
+<meta property="og:description" content="Double-Win Quant 论文精读今天读这篇论文: Double-Win Quant: Aggressively Winning Robustness of Quantized Deep Neural Networks via Random Precision Training and Inference 官方代码在这里: GitHub Rice-Eic Double-Win-Quant">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-07-10T09:14:17.000Z">
+<meta property="article:modified_time" content="2024-07-10T06:52:36.804Z">
+<meta property="article:author" content="kq">
+<meta property="article:tag" content="论文精读">
+<meta property="article:tag" content="模型量化">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>Double-Win-Quant 论文精读 - KQ&#39;s AI Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/zh-hans/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/zh-hans/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/zh-hans/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"kangkang37.github.io","root":"/zh-hans/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Oy95QsXXN5Dq2RLD8evjzYEP-MdYXbMMI","app_key":"g2P9HRXegX1XhaV3or2pH3zk","server_url":null,"path":"window.location.pathname","ignore_local":true}},"search_path":"/zh-hans/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/zh-hans/js/utils.js" ></script>
+  <script  src="/zh-hans/js/color-schema.js" ></script>
+  
+
+  
+
+  
+    <!-- Google tag (gtag.js) -->
+    <script async>
+      if (!Fluid.ctx.dnt) {
+        Fluid.utils.createScript("https://www.googletagmanager.com/gtag/js?id=", function() {
+          window.dataLayer = window.dataLayer || [];
+          function gtag() {
+            dataLayer.push(arguments);
+          }
+          gtag('js', new Date());
+          gtag('config', '');
+        });
+      }
+    </script>
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<script src="/zh-hans/js/hexo_resize_image.js"></script> 
+<!-- ## -->
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/zh-hans/">
+      <strong>KQ&#39;s AI Blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="https://kangkang37.github.io" target="_self">
+                <i class="iconfont icon-language"></i>
+                <span>language</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/zh-hans/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Double-Win-Quant 论文精读"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        kq
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-07-10 02:14" pubdate>
+          2024年7月10日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          8.5k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          72 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="leancloud-page-views"></span> 次
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Double-Win-Quant 论文精读</h1>
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    本文最后更新于 2024年7月9日晚上11点52分
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="Double-Win-Quant-论文精读"><a href="#Double-Win-Quant-论文精读" class="headerlink" title="Double-Win Quant 论文精读"></a>Double-Win Quant 论文精读</h1><p>今天读这篇论文: <a target="_blank" rel="noopener" href="https://proceedings.mlr.press/v139/fu21c/fu21c.pdf">Double-Win Quant: Aggressively Winning Robustness of Quantized Deep Neural Networks via Random Precision Training and Inference</a></p>
+<p>官方代码在这里: <a target="_blank" rel="noopener" href="https://github.com/RICE-EIC/Double-Win-Quant">GitHub Rice-Eic Double-Win-Quant</a></p>
+<h2 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h2><p>量化在使强大而复杂的深度神经网络（DNN）能够部署到资源受限的平台中具有很大潜力。然而，除非配备复杂的技术，否则量化的DNN容易受到对抗性攻击，这导致在DNN的效率和鲁棒性之间的困境。在这项工作中，我们展示了量化在DNN鲁棒性方面的新视角，主张量化可以大大提高DNN的鲁棒性，并提出了一个名为Double-Win Quant的框架，可以使量化的DNN在鲁棒性方面比全精度模型有大幅提升。具体来说，我们首次发现，当对抗训练模型以后训练方式量化到不同精度时，相关的对抗性攻击在不同精度之间传输效果很差。利用这一有趣的观察，我们进一步开发了Double-Win Quant，集成了随机精度推理和训练，以进一步减少并利用这种差的对抗转移性，实现DNN的鲁棒性和效率方面的“双赢”。大量实验和消融研究始终验证了Double-Win Quant在各种攻击/模型/数据集上的有效性和相对于最先进（SOTA）对抗训练方法的优势。我们的代码可在以下网址获取：<a target="_blank" rel="noopener" href="https://github.com/RICE-EIC/Double-Win-Quant。">https://github.com/RICE-EIC/Double-Win-Quant。</a></p>
+<h2 id="1-Introduction"><a href="#1-Introduction" class="headerlink" title="1 Introduction"></a>1 Introduction</h2><p>近期的DNN突破和物联网（IoT）设备的兴起引发了对DNN驱动的智能IoT设备的爆炸性需求（Liu等，2018；Wu等，2018）。然而，将DNN部署到IoT设备中仍然充满挑战。首先，强大的DNN通常成本高昂，而IoT设备经常面临严苛的资源限制。其次，尽管DNN易受对抗性攻击，但许多IoT应用需要严格的安全性。因此，提升DNN效率和鲁棒性的技术非常需要。</p>
+<p>作为开发高效DNN的最有前途的技术之一，并且普遍适用于多种算法，量化DNN的鲁棒性已引起越来越多的关注。最初认为，量化的舍入效应可能有助于消除小的对抗性扰动，早期的工作（Galloway等，2017；Panda等，2019）确实表明，二进制网络（Galloway等，2017；Panda等，2019）或基于tanh的量化DNN（Rakin等，2018）甚至比其全精度对应物更具鲁棒性。后来，Gupta和Ajanthan（2020）和Lin等（2019）发现这些方法实际上遭受了模糊梯度问题（Athalye等，2018；Papernot等，2017），导致了一种虚假的鲁棒性感觉。Lin等（2019）进一步提高了社区对量化DNN低劣鲁棒性的认识，指出主要原因是误差放大效应，即对抗性扰动在通过DNN层时被放大。最近的开创性工作（Lin等，2019；Song等，2020；Shkolnik等，2020）试图压缩这种放大效应，以实现鲁棒和高效的DNN。</p>
+<p>在这项工作中，我们提出了一个有趣的问题：“量化能否被恰当地利用以提高DNN的鲁棒性？”这受到以下最近发现的启发：（1）输入上的随机平滑或变换（Cohen等，2019；Li等，2018；Xie等，2017；Guo等，2017）可以防御DNN免受对抗性攻击；（2）权重扰动是输入扰动的良好补充（Wu等，2020），因为它们可以缩小鲁棒泛化差距，因为权重可以全局影响所有样本的损失。我们推测，量化噪声可以被利用来提供类似于权重和激活的扰动效果。具体来说，我们做出了以下贡献：</p>
+<ul>
+<li>我们提供了一个关于量化在DNN鲁棒性中角色的新视角，并主张如果适当利用量化，可以使DNN的鲁棒性比其全精度对应物显著增强，而不仅仅是提高量化模型的鲁棒性。</li>
+<li>我们首次发现，即使对抗训练模型在后训练方式下直接量化到不同的精度，相关的对抗性攻击在不同精度之间的转移效果依然很差，即使用一种精度生成的对抗性攻击在攻击量化到其他精度的相同模型时通常成功率较低。</li>
+<li>我们提出了一个简单但非常有效的框架，称为Double-Win Quant，它集成了随机精度推理（RPI）和随机精度训练（RPT），以实现DNN鲁棒性和效率方面的积极“双赢”。具体来说，RPI在运行时随机选择一个推理精度作为对抗训练模型的随机扰动，而RPT在训练中采用可切换的批量归一化，以进一步减少对抗性转移性差的影响，从而提高DNN的可实现鲁棒性。</li>
+<li>大量实验和消融研究表明，我们的方法在四种常用的对抗性训练方法、四种DNN模型和三种数据集上普遍有效，例如在CIFAR-10上使用PGD-7训练WideResNet32时，在PGD-20攻击下实现了12.14%的更高鲁棒精度，同时计算成本减少了88.9%。此外，我们的方法在更具攻击性的扰动下显示出更大的改进。</li>
+</ul>
+<h2 id="2-Related-Works-and-Background"><a href="#2-Related-Works-and-Background" class="headerlink" title="2 Related Works and Background"></a>2 Related Works and Background</h2><p><strong>DNN量化</strong>。量化已成为开发高效DNN的主流技术之一，通过使用较低浮点精度（Wang等，2018；Sun等，2019）或定点精度（Zhu等，2016；Li等，2016；Jacob等，2018；Mishra &amp; Marr，2017；Mishra等，2017；Park等，2017；Zhou等，2016）来表示权重/激活/梯度。特别是，Jacob等（2018）提出了量化感知训练，以学习权重分布，最小化量化后的精度下降。随后，可训练量化器（Jung等，2019；Bhalgat等，2020；Esser等，2019；Park &amp; Yoo，2020）通过可训练的量化参数进一步提高了低精度量化DNN的精度。与此同时，混合精度量化方法（Wang等，2019；Xu等，2018；Elthakeb等，2020；Zhou等，2017）被提出，以分配不同层不同的精度。然而，由于DNN的误差放大效应，量化DNN被发现对对抗性攻击更为脆弱。因此，开发同时有利于DNN效率和鲁棒性的量化技术非常必要。</p>
+<p><strong>对抗性攻击与防御</strong>。众所周知，DNN容易受到对抗性攻击（Goodfellow等，2014），即输入上的小扰动可以误导模型的决策。为了增强DNN的鲁棒性，许多防御方法（Guo等，2017；Buckman等，2018；Song等，2017；Xu等，2017；Liao等，2018；Metzen等，2017；Feinman等，2017；Li等，2018；Wu等，2020）也被提出，尽管其中许多方法后来被更强的攻击所击败。特别是，对抗性训练（Shafahi等，2019；Madry等，2017；Wong等，2019；Tramèr等，2017）目前是最有效的防御方法。具体来说，它通过生成不同攻击的对抗样本扩充训练集，从而使模型能够正确分类类似的未见对抗样本。在本工作中，我们重新思考量化在DNN鲁棒性中的角色，并利用它显著增强DNN的鲁棒性，超过其全精度对应物。</p>
+<p><strong>鲁棒且高效的DNN</strong>。效率和鲁棒性对大多数DNN应用都至关重要，已有一些开创性的工作旨在实现两者。例如，（Ye等，2019；Sehwag等，2020；Guo等，2018；Rakin等，2019）通过剪枝DNN以派生子网络，这些子网络可以维持或提高鲁棒性，而（Hu等，2020）通过输入自适应推理平衡鲁棒性和效率。同时，由于量化在提升效率方面有前景，其他工作努力设计鲁棒的量化DNN。具体来说，（Galloway等，2017；Panda等，2019）提出了鲁棒的二值神经网络，但它们却遭受模糊梯度问题（Athalye等，2018；Papernot等，2017）。Rakin等（2018）采用了基于tanh的量化，但也如Lin等（2019）所观察到的那样，遭受模糊梯度问题。后来，Lin等（2019）发现量化网络由于误差放大效应更容易受到对抗性攻击。为了解决这一问题，Lin等（2019）和Shkolnik等（2020）在模型损失函数中添加了新的正则化项，而Song等（2020）通过反馈学习（Song等，2019）重新训练网络。此外，Panda（2020）研究了层级精度，Gui等（2019）构建了一个统一的公式来分别平衡和强化鲁棒性和紧凑性。然而，现有工作并未考虑利用量化来增强鲁棒性。我们的Double-Win Quant首次利用量化来提升DNN的鲁棒性，远远超过全精度对应物。</p>
+<p><strong>量化DNN之间对抗样本的可迁移性</strong>。量化模型之间不同精度的对抗样本可迁移性已被（Bernhard等，2019；Gupta &amp; Ajanthan，2020）研究。特别是，Gupta和Ajanthan（2020）发现量化模型通常对由其全精度对应物生成的对抗样本具有鲁棒性，Bernhard等（2019）则发现全精度和量化模型之间以及不同比特宽度的量化模型之间的对抗样本可迁移性较差。基于前人的工作，我们进一步做出了新的贡献：（1）我们发现，即使是相同的对抗性预训练模型，如果在后训练方式下直接量化到不同精度，对抗样本在不同比特宽度的模型之间仍然传输不佳；（2）我们提出了两个简单且有效的技术（即RPI和RPT），基于（1）的观察，实现在DNN的鲁棒性和效率方面的双赢。</p>
+<h2 id="3-The-Double-Win-Quant-Framework"><a href="#3-The-Double-Win-Quant-Framework" class="headerlink" title="3 The Double-Win Quant Framework"></a>3 The Double-Win Quant Framework</h2><p>在本节中，我们首先在3.1节介绍对抗性训练的预备知识，然后在3.2节呈现和分析我们Double-Win Quant（DWQ）的激励观察，最后分别在3.3和3.4节描述DWQ的集成技术，即随机精度推理（RPI）和随机精度训练（RPT）。</p>
+<h3 id="3-1-Preliminaries-of-Adversarial-Training"><a href="#3-1-Preliminaries-of-Adversarial-Training" class="headerlink" title="3.1 Preliminaries of Adversarial Training"></a>3.1 Preliminaries of Adversarial Training</h3><p>众所周知，DNN容易受到对抗性攻击（Goodfellow等，2014），即在输入上施加小扰动$ \delta ( || \delta || \le \epsilon ) $可以误导DNN做出错误预测，其中$\epsilon$是限制扰动幅度的标量。为了增强DNN的对抗鲁棒性，目前对抗性训练是最强的防御方法（Athalye等，2018）。例如，在$l_{\infty}$攻击下（Goodfellow等，2014）通过最大化以下目标生成对抗扰动$\epsilon$：</p>
+<script type="math/tex; mode=display">
+\max_{\|\delta\|_\infty \leq \epsilon} l(f_\theta(x + \delta), y)</script><p>其中，$\theta$表示DNN的权重，𝑥和𝑦分别表示输入和相应的标签，l是损失函数。</p>
+<p>对抗性训练通过优化以下极小极大问题来提高模型的鲁棒性：</p>
+<script type="math/tex; mode=display">
+\min_\theta \sum_i \max_{\|\delta\|_\infty \leq \epsilon} l(f_\theta(x_i + \delta), y_i)</script><p>不同的对抗性训练方法在于它们如何解决上述公式中的内部优化问题。具体来说，快速梯度符号法（FGSM）（Goodfellow等，2014）使用一步梯度的符号作为近似：</p>
+<script type="math/tex; mode=display">
+\delta = \epsilon \cdot \text{sign}(\nabla_x l(f_\theta(x + \delta), y))</script><p>投影梯度下降法（PGD）（Madry等，2017）是FGSM的一个更强变种，通过多次迭代FGSM，每次使用小步长𝛼，公式为：</p>
+<script type="math/tex; mode=display">
+\delta_{t+1} = \text{clip}_\epsilon \{\delta_t + \alpha \cdot \text{sign}(\nabla_{\delta_t} l(f_\theta(x + \delta_t), y))\}</script><p>FGSM-RS（Wong等，2019）通过引入随机初始化来增加对抗多样性：</p>
+<script type="math/tex; mode=display">
+\delta = \text{Uniform}(-\epsilon, \epsilon)  \\
+\delta = \text{clip}_\epsilon \{\delta + \alpha \cdot \text{sign}(\nabla_\delta l(f_\theta(x + \delta), y))\}</script><p>其中，$clip_{\epsilon}$表示将输入限制在区间$[-\epsilon, \epsilon]$内的截断函数。</p>
+<p>由于PGD攻击是最强的白盒攻击之一，我们在本工作中主要采用它来评估DNN的对抗鲁棒性。</p>
+<h3 id="3-2-DWQ-Motivating-Observation"><a href="#3-2-DWQ-Motivating-Observation" class="headerlink" title="3.2 DWQ: Motivating Observation"></a>3.2 DWQ: Motivating Observation</h3><p>不同压缩模型之间的对抗攻击的可转移性已经被研究过（Matachana等，2020；Bernhard等，2019；Gupta &amp; Ajanthan，2020）。然而，如何利用这种可转移性来设计对抗攻击下的鲁棒DNN仍然是一个开放的问题。在本工作中，我们提出了一个问题：“对抗性训练模型在不同精度之间的对抗攻击的可转移性如何？”，考虑到预训练模型的精度可以瞬间切换（Jin等，2020）。我们发现，即使对抗性训练模型在训练后直接量化为不同的精度，这些对抗攻击在不同精度之间的可转移性仍然很差，无论其对抗性训练方法和训练精度如何。</p>
+<p>实验设置。我们在不同的对抗性训练方法和训练精度下进行实验，以评估同一对抗性训练模型在不同精度下的对抗攻击的可转移性。我们在采用线性量化器（Jacob等，2018）的不同对抗性训练方法和训练精度下，使用PGD-20（20步PGD（Madry等，2017））攻击PreActResNet18（遵循（Wong等，2019）），其训练设置在4.1节介绍。在图1中，（a）∼（e）直接在训练后将模型量化为不同精度（权重和激活相同）以生成对抗样本和进行推理，（f）则利用不同量化模型在干净图像上生成的PGD-20攻击，模拟黑盒攻击。需要注意的是，实验（f）的目标是检查是否存在模糊梯度问题（Athalye等，2018），而不是像（a）∼（e）那样探索可转移性。</p>
+<p>实验观察。可以得出四个观察结果：</p>
+<ol>
+<li>使用一种精度生成的对抗攻击在攻击同一对抗性训练模型时，量化到不同精度时成功率较低，尤其是在常采用的低精度下，这在不同的对抗性训练方法和量化模型的训练精度下是一致的；</li>
+<li>白盒攻击下的平均鲁棒准确性（见图1（a）∼（e））始终高于使用相应对抗性训练方法的全精度模型，表明随机选择推理精度可以潜在地提供有效的防御。使用PGD-7/FGSM/FGSM-RS训练的PreActResNet18的全精度准确性分别为51.2%/41.5%/47.1%；</li>
+<li>差的可转移性不是由于模糊梯度问题，因为模型在黑盒攻击下表现出比白盒攻击更好的鲁棒性（根据Athalye等，2018）；</li>
+<li>在相同低精度下训练和攻击确实显著降低了鲁棒准确性，如图1（a）∼（e）的对角线所示，这与（Lin等，2019）的观察结果一致，原因是误差放大效应。</li>
+</ol>
+<p>分析和讨论。主要结论是，对于白盒攻击，用一种精度生成的对抗攻击在另一种精度下的可转移性较差。我们假设这种差的可转移性是因为对抗扰动被两种精度之间的量化噪声屏蔽，无法被基于梯度的攻击有效学习。具体来说，考虑一个线性量化器，对于激活值𝐴（权重相同），𝑘位量化值$𝐴_𝑞$可以表示为 $𝐴_𝑞 = 𝑆_𝑘 \lfloor  \frac{A}{S_k} \rceil $，其中$\lfloor \rceil$是取整操作，$ S_k = \frac{A_{max} - A_{min}}{2^k - 1} $是缩放因子。对于普通量化，基于梯度的攻击通过直接估计法（Bengio等，2013；Yin等，2019）可以有效学习量化效果，即$ \frac{\partial L}{\partial A} \approx \frac{\partial L}{\partial A_q} $，其中L是损失函数。然而，两种不同精度（m位和n位）之间的量化噪声$ S_m \lfloor \frac{A}{S_m} \rfloor - S_n \lfloor \frac{A}{S_n} \rfloor $ 不能被基于梯度的攻击有效学习，因此对抗扰动可以被埋藏在量化噪声中，导致攻击失败。</p>
+<h3 id="3-3-Vanilla-DWQ-Random-Precision-Inference"><a href="#3-3-Vanilla-DWQ-Random-Precision-Inference" class="headerlink" title="3.3 Vanilla DWQ: Random Precision Inference"></a>3.3 Vanilla DWQ: Random Precision Inference</h3><p>这里我们介绍了整合了RPI（随机精度推理）的vanilla DWQ，它简单且普遍适用于不同的DNN。</p>
+<p>方法论。给定一个经过对抗性训练的模型，RPI在推理期间随机选择一个精度集中的精度来量化模型的权重和激活。RPI的有效性基于以下两个事实：</p>
+<ol>
+<li>经过量化感知训练的模型在推理过程中被直接量化到不同精度时，其自然准确性（在干净图像上的表现）相对稳定（Jin等，2020；Guerra等，2020；Fu等，2021b），因此RPI生成的模型可以保持与静态精度模型相当的自然准确性；</li>
+<li>随机选择推理精度可以大大降低对抗攻击的有效性，只要攻击不是在相同精度下生成的，这在不同的对抗性训练方法和训练精度下都得到了验证（见图1）。尽管对抗者可能会选择成功率较高的精度进行攻击，但RPI可以采用采样策略来倾向于选择通常更为鲁棒的精度。为了简便起见，本工作中我们认为对抗者和RPI都从相同的推理精度集中随机选择精度。RPI算法总结在算法1中。</li>
+</ol>
+<p><strong>实现</strong>。由于RPI的执行需要在推理过程中切换不同的精度，我们稍微修改了量化方案，灵感来自（Jin等，2020），以确保实现的简便性。具体来说，我们将权重$\theta$量化为 $\theta_q = \hat S_k min(\lfloor \frac{\theta}{\hat S_k} \rceil , 2^k - 1)$，其中 $  \hat S_k = \frac{\theta_{max} - \theta_{min}}{2^k}$。因此，在不同精度之间的切换只需要通过移位操作来裁剪最显著位（MSB），即$ \lfloor \frac{\theta}{\hat S_m} \rceil &gt;&gt; (m-1)$ 等于$ \lfloor \frac{\theta}{\hat S_n} \rceil $ ，其中 &gt;&gt; 是右移操作。因此，只需存储一个最高精度的量化模型副本。</p>
+<p><strong>与先前工作的联系</strong>。RPI的精神与近期关于DNN扰动和鲁棒性的发现一致。特别地，已有研究表明，输入上的随机平滑或转换（Cohen等，2019；Li等，2018；Xie等，2017；Guo等，2017）可以帮助DNN增强对抗攻击的鲁棒性，（Wu等，2020）发现权重扰动可以作为输入扰动的良好补充，以缩小鲁棒性泛化差距，因为DNN的权重可以全局影响所有输入样本的损失。（He等，2019；Dhillon等，2018）也明确在模型的权重或激活中引入随机性和扰动。借鉴这些发现，我们推测RPI的有效性在于随机切换不同精度所产生的量化噪声自然地向权重和激活注入随机扰动，这可以抵消对抗特征的影响，从而增强模型的对抗鲁棒性。</p>
+<p><strong>RPI的硬件支持</strong>。最先进的自适应精度加速器，如Bit Fusion（Sharma等，2018）和Stripes（Judd等，2016），致力于支持动态精度推理，这可以自然地支持RPI的执行。更多关于RPI的潜在硬件实现可以在（Camus等，2019）中找到。</p>
+<h3 id="3-4-Enhanced-DWQ-Random-Precision-Training"><a href="#3-4-Enhanced-DWQ-Random-Precision-Training" class="headerlink" title="3.4 Enhanced DWQ: Random Precision Training"></a>3.4 Enhanced DWQ: Random Precision Training</h3><p>如上述小节所述，我们的vanilla DWQ仅通过操纵对抗训练模型的推理精度来提高其鲁棒性。在本小节中，我们介绍了增强版DWQ，它通过装备有可切换批量归一化（SBN）的RPT进一步加剧不同精度之间的低可迁移性，从而进一步增强DNN的对抗鲁棒性。</p>
+<p><strong>动机</strong>。（Xie等，2020）采用了干净样本和对抗样本的双重BN，以提高自然准确性，这激发了我们分别处理干净和对抗输入统计数据的必要性。此外，（Jin等，2020；Guerra等，2020）建议为不同精度使用独立的BN，以实现对训练过的DNN的即时量化到不同位宽，保持与使用相应精度单独训练的相同DNN的自然准确性。这些工作激励并启发我们提出了增强版DWQ，因为为不同精度应用独立的BN来记录每个精度下生成的对抗样本的特定统计数据，可能会扩大不同精度之间的差距，即进一步增加对抗样本在不同精度之间的迁移难度。</p>
+<p><strong>方法论</strong>。我们的增强版DWQ通过在每次迭代中从候选精度集中随机选择一个精度来生成对抗样本并使用所选精度更新模型，从头开始对模型进行对抗训练，同时为模型配备SBN以独立记录不同精度的统计数据。尽管存在其他训练方案，例如渐进精度（Fu等，2020）或动态精度（Fu等，2021a），但我们发现RPT在大幅提高量化模型鲁棒性方面已经足够有效，而不会增加训练复杂性，这在第4.4节中得到了验证。此外，我们在附录中可视化了增强版DWQ实现的对抗迁移性，可以观察到相较于vanilla DWQ，迁移性显著减少。</p>
+<p>在PGD-7（Madry等，2017）训练基础上的RPT算法总结在算法2中，其他对抗训练方法（例如FGSM（Goodfellow等，2014）和FGSM-RS（Wong等，2019））的算法类似。请注意，RPI和RPT的一个优势是它们简单且在不同DNN模型、精度集和对抗训练方法中表现一致良好，无需在超参数选择上特别挑选，这在第4节中得到了验证。</p>
+<h2 id="4-Experiment-Results"><a href="#4-Experiment-Results" class="headerlink" title="4 Experiment Results"></a>4 Experiment Results</h2><p>在本节中，我们首先在第4.1节介绍实验设置，然后在第4.2节对我们的DWQ与SOTA对抗训练方法进行基准测试。接下来，我们将在第4.3节和4.4节分别对DWQ的集成RPI和RPT技术进行全面的消融研究。</p>
+<h3 id="4-1-Experiment-Setup"><a href="#4-1-Experiment-Setup" class="headerlink" title="4.1 Experiment Setup"></a>4.1 Experiment Setup</h3><p><strong>网络&amp;数据集</strong><br>我们在四个网络和三个数据集上评估了我们的DWQ，即在CIFAR-10/100上评估了PreActResNet18（参照Wong等人，2019），WideResNet32（参照Madry等人，2017和Shafahi等人，2019），和MobileNetV2，在ImageNet上评估了ResNet-50（参照Shafahi等人，2019和Wong等人，2019）。</p>
+<p><strong>训练设置</strong>。我们考虑了四种SOTA对抗训练方法，包括FGSM（Goodfellow等人，2014），FGSM-RS（Wong等人，2019），PGD-7（Madry等人，2017），和Free（Shafahi等人，2019）。我们遵循他们原始论文中的对抗训练超参数设置，即在FGSM-RS训练中采用1.25𝜖的步长，在PGD-7训练中采用2的步长。为了公平起见，我们遵循(Madry等人，2017)的模型训练设置，不使用其他训练技巧。在CIFAR-10/100上，我们训练模型160个周期，批次大小为128，使用动量为0.9的SGD优化器，从初始学习率0.1开始，在第80和120个周期时衰减10倍。在ImageNet上，我们遵循ImageNet上SOTA量化工作的设置(Jung等人，2019；Bhalgat等人，2020；Esser等人，2019；Park和Yoo，2020)，从清晰图像上预训练的全精度模型开始。具体来说，我们对预训练的全精度ResNet-50进行60个周期的对抗训练，批次大小为256，使用动量为0.9的SGD优化器，从初始学习率0.01开始，在第30个周期时衰减10倍。</p>
+<p><strong>攻击设置</strong>。我们主要考虑不同迭代次数/重启次数和扰动强度的PGD攻击(Madry等人，2017)，并评估DWQ在CW-L2/CW-Inf攻击(Carlini和Wagner，2017)，Auto-Attack(Croce和Hein，2020)，以及无梯度攻击Bandits(Ilyas等人，2018)下的整体鲁棒性。具体来说，对于CW-L2/CW-Inf攻击，我们采用AdverTorch（Ding等人，2019）中的实现，并遵循(Chen等人，2021；Rony等人，2019)中的设置；对于Auto-Attack（Croce和Hein，2020）和Bandits（Ilyas等人，2018），我们采用官方实现和原始论文中的默认设置。我们假设攻击者从与我们DWQ相同的推理精度集中随机选择精度进行攻击，这样可以保证公平，因为（1）任何超出DWQ推理精度集的攻击精度只会增加DWQ的鲁棒准确性，根据第3.2节的实验结果，和（2）虽然攻击者可能选择攻击成功率更高的精度，我们的DWQ也可以增加抽取更鲁棒精度的概率，以实现更强的防御，这里我们假设攻击者和DWQ都采用随机精度以简化说明。</p>
+<p><strong>RPI和RPT的精度设置</strong>。DWQ涉及两种精度设置：（1）RPT的训练精度集和（2）RPI的推理精度集。在不挑选精度设置的情况下，我们基于效率-鲁棒性考虑确定精度。具体来说，如果没有特别说明，我们在采用RPT时，训练PreActResNet18和WideResNet32时使用4∼16位，训练MobileNetV2时使用4∼8位，并在对应的推理中使用相同的精度集。当仅启用RPI（即不使用RPT的DWQ）时，我们以定点4位对抗训练PreActResNet18和WideResNet32，以8位对抗训练MobileNetV2，并使用4∼8位的推理精度集。我们在第4.3和4.4节中验证了DWQ在不同推理和训练精度集选择下的一致性优势。此外，我们使用BitOPs（位操作）来衡量计算成本，参考SOTA量化DNN工作。</p>
+<h3 id="4-2-DWQ-Benchmark-with-SOTA-Methods"><a href="#4-2-DWQ-Benchmark-with-SOTA-Methods" class="headerlink" title="4.2 DWQ: Benchmark with SOTA Methods"></a>4.2 DWQ: Benchmark with SOTA Methods</h3><p><strong>基准测试与SOTA对抗训练方法</strong><br>在这里，我们将我们的RPI和RPT技术与全精度训练的SOTA对抗训练方法进行基准测试，以验证其在提升模型鲁棒性和效率方面的“双赢”效果。</p>
+<p><strong>CIFAR-10上的结果</strong>：如表1所示，（1）RPI和RPT在所有网络和对抗训练方法下的一致性提升了在不同设置下PGD攻击下的鲁棒准确率；（2）DWQ（即RPI + RPT）始终实现了最好的鲁棒性，同时保持了可比的自然准确率，远超全精度的SOTA对抗训练方法。具体来说，我们的DWQ在应用于PGD-7训练（最强的对抗训练方法之一）时，在PreActResNet18和WideResNet32上在PGD-20攻击下分别实现了13.98%/12.14%的更高鲁棒准确率，同时降低了88.9%的计算成本；（3）DWQ还在PGD-20攻击下在FGSM/FGSM-RS基础上提升了13.57%∼22.60%的鲁棒准确率。值得注意的是，尽管FGSM对抗训练在迭代攻击下容易失效（Kurakin等人，2016），我们的DWQ仍然显著提升了其鲁棒准确率22.6%。</p>
+<p><strong>CIFAR-100上的结果</strong>：如表2所示，在CIFAR-100上的观察结果与CIFAR-10上的一致，表明我们的DWQ在更复杂任务中的可扩展性。具体来说，DWQ结合RPI和RPT在FGSM-RS/PGD-7训练的基础上在PGD-20攻击下分别在PreActResNet18和WideResNet32上实现了10.61%/13.77%和13.83%/9.39%的更高鲁棒准确率。</p>
+<p><strong>ImageNet上的结果</strong>：如表3所示，我们可以观察到，我们增强的DWQ在自然准确率、鲁棒准确率和模型效率方面实现了三重胜利。具体来说，增强的DWQ在PGD-10攻击下在FGSM-RS（Wong等人，2019）和Free（Shafahi等人，2019）基础上分别实现了7.65%/10.11%的更高准确率，同时减少了88.9%的计算成本。这组实验进一步表明了我们DWQ框架在大规模数据集上的可扩展性和适用性。</p>
+<p><strong>在紧凑型DNN上的基准测试</strong>：如（Madry等人，2017）所述，容量更高的模型在多步攻击下更具鲁棒性，因此防御像MobileNetV2（Sandler等人，2018）这样紧凑型模型更具挑战性和必要性。如表4所示，我们的DWQ在MobileNetV2上在FGSM-RS/PGD-7训练的基础上分别提升了17.05%/7.69%的鲁棒准确率，表明DWQ在紧凑型DNN中的适用性。我们还观察到，在FGSM-RS基础上的DWQ在鲁棒性和自然准确率之间实现了更好的平衡，而在PGD-7基础上的DWQ，因为PGD-7过于追求鲁棒性而忽视了MobileNetV2在干净图像上的量化易损性（Sheng等人，2018）。</p>
+<p><strong>在更大扰动下的基准测试</strong>：我们进一步评估了DWQ在CIFAR-10上的PGD-7训练下在更大扰动下的可扩展性，如表5所示。令人感兴趣的是，DWQ在更强的对抗攻击下甚至实现了更大的鲁棒性提升。表5显示，DWQ在PGD-20攻击下实现了11.66%∼18.89%和15.68%∼23.26%的更高鲁棒准确率，扰动分别为𝜖=12和16。更大扰动下的鲁棒性提升验证了DWQ在更具挑战性环境中的适用性。</p>
+<p><strong>在更多攻击下的基准测试</strong>：我们评估了增强的DWQ在PGD-7训练基础上对Auto-Attack（Croce和Hein，2020）、CW-L2/CW-Inf攻击（Carlini和Wagner，2017）和Bandits攻击（Ilyas等人，2018）的表现。如表6所示，增强的DWQ在不同攻击/模型/数据集/扰动下的一致性提升了鲁棒准确率，例如在Auto-Attack下+6.88%∼+9.12%、在Bandits攻击下+5.01%∼+24.48%，更令人惊讶的是在CW-Inf攻击下+9.97%∼+25.71%。这表明不同攻击/推理精度间的差转移性较差，因此DWQ仍然非常有效，而PGD-7训练的网络在更大扰动下的鲁棒性下降更多。这组实验验证了DWQ在不同攻击类型下实现的一致性鲁棒性。</p>
+<p><strong>与SOTA鲁棒量化方法的基准测试</strong>：DWQ最相关的工作是（Lin等人，2019），该工作约束了逐层Lipschitz常数，并与DWQ正交。尽管（Lin等人，2019）压缩了量化对对抗鲁棒性的负面影响，DWQ利用量化噪声提升对抗鲁棒性，因此结合这两种方法可能会产生更鲁棒的DNN。与（Lin等人，2019）在CIFAR-10上PGD-20攻击下报告的最佳鲁棒准确率相比，我们的DWQ在同样的PGD-7训练网络上分别在𝜖=8和16下实现了14.6%和22.5%的更高鲁棒准确率。</p>
+<p><strong>模糊梯度检查</strong>：我们还在PreActResNet18上评估了DWQ在（Athalye等人，2018）中所有其他模糊梯度标志下的表现，除了图1（f）中的黑箱攻击，我们发现（1）在CIFAR-10和CIFAR-100上，在1步/20步PGD攻击下的鲁棒准确率分别为78.37%/65.15%和52.25%/41.74%；（2）对于无限制PGD-20攻击，DWQ的鲁棒准确率接近于零；（3）在DWQ未发现对抗样本的情况下，PGD-20未找到对抗样本；（4）增加失真会导致鲁棒性下降，如表5所示。因此，DWQ不存在模糊梯度问题。</p>
+<h3 id="4-3-DWQ-Ablation-Study-of-Vanilla-DWQ"><a href="#4-3-DWQ-Ablation-Study-of-Vanilla-DWQ" class="headerlink" title="4.3 DWQ: Ablation Study of Vanilla DWQ"></a>4.3 DWQ: Ablation Study of Vanilla DWQ</h3><p><strong>RPI在不同精度下的训练</strong>。图2(a)展示了在CIFAR-10上，RPI在PGD-20攻击下的三种不同精度的PGD-7训练网络所取得的自然和鲁棒准确率，采用了4∼8-bit的推理精度集。在不同的训练精度下，自然和鲁棒准确率保持稳定（在1.12%以内），表明RPI对量化模型具有普遍适用性。</p>
+<p><strong>RPI采用不同的推理精度集</strong>。图2(b)展示了在CIFAR-10上，RPI在PGD-20攻击下的三种PGD-7/4-bit训练网络所取得的自然和鲁棒准确率，考虑了不同的推理精度集。我们可以观察到：（1）RPI采用不同的推理精度集始终改善了表1中普通PGD-7训练的鲁棒性；（2）没有RPT的帮助下，普通DWQ（即仅仅是RPI）稍微倾向于较小的精度范围和接近训练精度的精度，因为这两者导致了训练和推理精度之间较小的分布差异。因此，考虑到鲁棒性和效率，在第4.2节中我们采用了4∼8-bit的RPI。</p>
+<p><strong>RPI仅应用于权重/激活</strong>。在所有其他实验中，我们采用相同的精度来处理权重和激活，以实现硬件友好的实现。在这里，我们进一步探讨了当RPI仅应用于权重或激活时，DWQ的动机观察和益处是否始终保持一致。图3中的实验表明，当固定权重或激活的精度时，对抗攻击的差转移性始终被观察到，这表明RPI仅应用于权重或激活时在增强模型鲁棒性方面仍然是有效的。</p>
+<h3 id="4-4-DWQ-Ablation-Study-of-Enhanced-DWQ"><a href="#4-4-DWQ-Ablation-Study-of-Enhanced-DWQ" class="headerlink" title="4.4 DWQ: Ablation Study of Enhanced DWQ"></a>4.4 DWQ: Ablation Study of Enhanced DWQ</h3><p><strong>增强DWQ的不同精度范围</strong>。<br>图2(c)展示了在CIFAR-10上，三种使用增强DWQ（即RPI + RPT）训练的网络在不同训练精度集上的自然和鲁棒准确率（在PGD-20攻击下），以PGD-7训练为基础。我们可以看到：（1）虽然在不同设置下鲁棒准确率有所波动，DWQ结合RPT和RPI始终在鲁棒性方面超越SOTA的PGD-7训练或仅有RPI的DWQ（如表1所示）；（2）具有较高容量的模型如PreActResNet18和WideResNet32偏好较大的精度范围以减少命中对手精度的概率，而容量较低的模型如MobileNetV2则偏好较小的精度范围和相对较高的精度，因为它们对量化较为敏感（Sheng et al., 2018）。</p>
+<p><strong>不同训练方案下的增强DWQ</strong>。我们还将增强的DWQ与另一种动态精度训练方法CPT（Fu et al., 2021a）结合，该方法在最低和最高精度之间循环切换，并在不同的循环周期下比较增强的DWQ和RPT或CPT。表7显示：（1）CPT在最强的PGD-7训练基础上可以达到与RPT相当的鲁棒性，但其循环周期需要微调；（2）CPT在较不强大的对抗训练方法基础上导致较大的训练不稳定性以及较低的自然和鲁棒准确率，我们推测这是由于SBN的统计数据与当前权重之间的不匹配，因为CPT仅在连续精度之间切换。相比之下，结合RPT的DWQ表现出一致的稳定性和有效性。</p>
+<h2 id="5-Conclusion"><a href="#5-Conclusion" class="headerlink" title="5 Conclusion"></a>5 Conclusion</h2><p>在这项工作中，我们展示了如果合理利用量化，可以显著增强量化DNN的鲁棒性，甚至超过其全精度模型的表现，而不仅仅是提高量化模型的鲁棒性。此外，我们提出了一个简单但有效的框架，称为Double-Win Quant，在DNN的鲁棒性和效率方面实现了激进的“双赢”。我们相信Double-Win Quant为设计鲁棒且高效的DNN开辟了新的视角。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/zh-hans/categories/%E8%AE%BA%E6%96%87%E7%B2%BE%E8%AF%BB/" class="category-chain-item">论文精读</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/zh-hans/tags/%E8%AE%BA%E6%96%87%E7%B2%BE%E8%AF%BB/" class="print-no-link">#论文精读</a>
+      
+        <a href="/zh-hans/tags/%E6%A8%A1%E5%9E%8B%E9%87%8F%E5%8C%96/" class="print-no-link">#模型量化</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Double-Win-Quant 论文精读</div>
+      <div>https://kangkang37.github.io/zh-hans/2024/07/10/papers-paper04-double-win-quant/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>kq</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年7月10日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/zh-hans/2024/07/10/dataset-squad/" title="SQuAD数据集的结构和代码">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">SQuAD数据集的结构和代码</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/zh-hans/2024/07/10/papers-paper03-cpt/" title="CPT Cyclic Precision Training 论文精读">
+                        <span class="hidden-mobile">CPT Cyclic Precision Training 论文精读</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="" ><span>Kangkang</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/kangkang37" target="_blank" rel="nofollow noopener"><span>GitHub</span></a>     
+    </div>
+  
+  
+    <div class="statistics">
+  
+  
+
+  
+    
+      <span id="leancloud-site-pv-container" style="display: none">
+        点击量: 
+        <span id="leancloud-site-pv"></span>
+         ,
+      </span>
+    
+    
+      <span id="leancloud-site-uv-container" style="display: none">
+        访问人数: 
+        <span id="leancloud-site-uv"></span>
+         
+      </span>
+    
+    
+
+  
+</div>
+
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/zh-hans/js/events.js" ></script>
+<script  src="/zh-hans/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/zh-hans/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            loader : {
+              load: ['ui/lazy']
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.2/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/zh-hans/js/leancloud.js" ></script>
+
+  <script  src="/zh-hans/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/zh-hans/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
