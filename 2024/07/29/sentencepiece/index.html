@@ -1,0 +1,845 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/zh-hans/img/fluid.png">
+  <link rel="icon" href="/zh-hans/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="kq">
+  <meta name="keywords" content="hexo, blog, ai, artificial intelligence">
+  
+    <meta name="description" content="Google的SentencePiece分词器什么是SentencePieceSentencePiece是Google推出的sub-word开源工具包. 它是一个无监督的文本tokenizer和detokenizer, 主要用于基于神经网络的文本生成系统, 其中词汇量是在模型训练之前预先确定的. SentencePiece实现子词单元(例如byte-pair-encoding(BPE), 和uni">
+<meta property="og:type" content="article">
+<meta property="og:title" content="详细介绍Google的SentencePiece">
+<meta property="og:url" content="https://kangkang37.github.io/zh-hans/2024/07/29/sentencepiece/index.html">
+<meta property="og:site_name" content="KQ&#39;s AI Blog">
+<meta property="og:description" content="Google的SentencePiece分词器什么是SentencePieceSentencePiece是Google推出的sub-word开源工具包. 它是一个无监督的文本tokenizer和detokenizer, 主要用于基于神经网络的文本生成系统, 其中词汇量是在模型训练之前预先确定的. SentencePiece实现子词单元(例如byte-pair-encoding(BPE), 和uni">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-07-30T02:28:50.000Z">
+<meta property="article:modified_time" content="2024-07-31T05:32:53.565Z">
+<meta property="article:author" content="kq">
+<meta property="article:tag" content="tokenizer">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>详细介绍Google的SentencePiece - KQ&#39;s AI Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/zh-hans/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/zh-hans/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/zh-hans/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"kangkang37.github.io","root":"/zh-hans/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Oy95QsXXN5Dq2RLD8evjzYEP-MdYXbMMI","app_key":"g2P9HRXegX1XhaV3or2pH3zk","server_url":null,"path":"window.location.pathname","ignore_local":true}},"search_path":"/zh-hans/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/zh-hans/js/utils.js" ></script>
+  <script  src="/zh-hans/js/color-schema.js" ></script>
+  
+
+  
+
+  
+    <!-- Google tag (gtag.js) -->
+    <script async>
+      if (!Fluid.ctx.dnt) {
+        Fluid.utils.createScript("https://www.googletagmanager.com/gtag/js?id=", function() {
+          window.dataLayer = window.dataLayer || [];
+          function gtag() {
+            dataLayer.push(arguments);
+          }
+          gtag('js', new Date());
+          gtag('config', '');
+        });
+      }
+    </script>
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<script src="/zh-hans/js/hexo_resize_image.js"></script> 
+<!-- ## -->
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/zh-hans/">
+      <strong>KQ&#39;s AI Blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="https://kangkang37.github.io" target="_self">
+                <i class="iconfont icon-language"></i>
+                <span>language</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/zh-hans/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="详细介绍Google的SentencePiece"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        kq
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-07-29 19:28" pubdate>
+          2024年7月29日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          18 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="leancloud-page-views"></span> 次
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">详细介绍Google的SentencePiece</h1>
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    本文最后更新于 2024年7月30日晚上10点32分
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="Google的SentencePiece分词器"><a href="#Google的SentencePiece分词器" class="headerlink" title="Google的SentencePiece分词器"></a>Google的SentencePiece分词器</h1><h2 id="什么是SentencePiece"><a href="#什么是SentencePiece" class="headerlink" title="什么是SentencePiece"></a>什么是SentencePiece</h2><p>SentencePiece是Google推出的sub-word开源工具包. 它是一个无监督的文本tokenizer和detokenizer, 主要用于基于神经网络的文本生成系统, 其中词汇量是在模型训练之前预先确定的. SentencePiece实现子词单元(例如byte-pair-encoding(BPE), 和unigram语言模型). SentencePiece让我们能创建一个存粹的端到端系统, 不依赖于特定语言的预处理/后处理.</p>
+<p>SentencePiece的优势: </p>
+<ol>
+<li>纯数据驱动. SentencePiece直接用句子训练tokenizer和detokenizer, pre-tokenizeation是不需要的.</li>
+<li>语言独立的. SentencePiece直接把句子变为Unicode字符序列, 不依赖于语言, 解决了针对不同语言需要不同编码方式的问题.</li>
+<li>多种subword算法. 支持BPE算法, unigram语言模型算法.</li>
+<li>快速, 轻量级. </li>
+</ol>
+<h2 id="SentencePiece的特点"><a href="#SentencePiece的特点" class="headerlink" title="SentencePiece的特点"></a>SentencePiece的特点</h2><p>SentencePiece是基于sub-word分词粒度的tokenizer和detokenizer. 支持BPE和unigram方法.</p>
+<p>关于BPE方法和unigram方法的介绍, 你可以看下方资源链接中的论文, 也可以看这个帖子<a href="/zh-hans/2024/07/29/tokenizer02/" title="Tokenizer的原理II——BPE和Unigram方法">Tokenizer的原理II——BPE和Unigram方法</a>.</p>
+<p><strong>tokens的数量是预先确定的</strong><br>大多数的无监督分词算法会假设词汇表是无限的, 但是sentencepiece训练分词模型时, 会预先确定词汇表大小, 例如8k, 16k, 32k.</p>
+<p><strong>直接从原始句子训练</strong><br>之前的sub-word分词训练会先对输入的句子pre-tokenized, 这个做法能让后面的训练更高效. 但由于我们必须事先运行语言相关的tokenizer,导致预处理变得复杂. SentencePiece直接从原始句子开始训练, 让训练更快速. 对中文和日文的训练更有用, 因为这类语言的单词之间没有明确的空格.</p>
+<p><strong>空格被当作一个基本符号</strong><br>NLP(Natural Language Processing)的第一步就是text tokenization. 例如, 一个标准的英文分词器会把文本‘hello, world.’分为三个tokens:<br><figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs css"><span class="hljs-selector-attr">[hello]</span> <span class="hljs-selector-attr">[world]</span> <span class="hljs-selector-attr">[.]</span><br></code></pre></td></tr></table></figure><br>我们会发现原始输入和分词后的序列是不可逆的转换. 也就是只能从原始输入得到分词后序列, 无法从分词后序列还原为原始输入. 例如, ‘world’和‘.’之间是否有空格, 这个信息在分词后序列中是被丢弃了的, 我们无法从分词后序列判断在world和句号之间是否有空格.即:<br><figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">Tokenizer</span><span class="hljs-params">(<span class="hljs-string">&#x27;world.&#x27;</span>)</span></span> == <span class="hljs-built_in">Tokenizer</span>(<span class="hljs-string">&#x27;world .&#x27;</span>)<br></code></pre></td></tr></table></figure><br>SentencePiece把输入文本先转为一个unicode字符序列, 这样, 空格也被当作一个标准符号处理. 为了明确的把空格当作一个basic token处理, 首先会把空格转为元符号$_ (U+2581)$, 如下:<br><figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ebnf"><span class="hljs-attribute">hello_world</span><br></code></pre></td></tr></table></figure><br>然后再把其分割为一个个tokens:<br><figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs css"><span class="hljs-selector-attr">[hello]</span> <span class="hljs-selector-attr">[_wor]</span> <span class="hljs-selector-attr">[ld]</span> <span class="hljs-selector-attr">[.]</span><br></code></pre></td></tr></table></figure><br>因为在分割后文本中空格被保留, 我们可以对文本毫无歧义的去分词化detokenize:<br><figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">detokenized</span> = <span class="hljs-string">&#x27;&#x27;</span>.join(pieces).replace(<span class="hljs-string">&#x27;_&#x27;</span>, <span class="hljs-string">&#x27; &#x27;</span>)<br></code></pre></td></tr></table></figure></p>
+<p>这个特点(在分词后序列中保留空格信息)让detokenization的实施不依赖于语言种类. 例如, 因为英语是有空格的, 而汉语没有空格, 如果忽略空格信息, 这两种语言的去分词化方法肯定会有差异. 但是sentencepiece由于保留了空格信息, 它可以对所有语言使用统一的去分词化方法.</p>
+<p><strong>子词正则化和BPE dropout</strong><br>子词正则化regularization, 和BPE dropout是简单的正则化方法, 通过实时子词采样来虚拟地增强训练数据, 帮助改善 NMT (Neural Machine Translation)模型的准确性和鲁棒性.</p>
+<p>要启用subword regularization(子词正则化), 你需要将sentencepiece库集成到NMT系统中, 以便为每个参数更新采样一个分段, 这和标准的离线数据准备不同. 下面是示例, 会发现’New York’的每次分段都不同.<br><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs routeros">&gt;&gt;&gt; import sentencepiece as spm<br>&gt;&gt;&gt; s = spm.SentencePieceProcessor(<span class="hljs-attribute">model_file</span>=<span class="hljs-string">&#x27;spm.model&#x27;</span>)<br>&gt;&gt;&gt; <span class="hljs-keyword">for</span> n <span class="hljs-keyword">in</span> range(5):<br><span class="hljs-built_in">..</span>.     s.encode(<span class="hljs-string">&#x27;New York&#x27;</span>, <span class="hljs-attribute">out_type</span>=str, <span class="hljs-attribute">enable_sampling</span>=<span class="hljs-literal">True</span>, <span class="hljs-attribute">alpha</span>=0.1, <span class="hljs-attribute">nbest_size</span>=-1)<br><span class="hljs-built_in">..</span>.<br>[<span class="hljs-string">&#x27;▁&#x27;</span>, <span class="hljs-string">&#x27;N&#x27;</span>, <span class="hljs-string">&#x27;e&#x27;</span>, <span class="hljs-string">&#x27;w&#x27;</span>, <span class="hljs-string">&#x27;▁York&#x27;</span>]<br>[<span class="hljs-string">&#x27;▁&#x27;</span>, <span class="hljs-string">&#x27;New&#x27;</span>, <span class="hljs-string">&#x27;▁York&#x27;</span>]<br>[<span class="hljs-string">&#x27;▁&#x27;</span>, <span class="hljs-string">&#x27;New&#x27;</span>, <span class="hljs-string">&#x27;▁Y&#x27;</span>, <span class="hljs-string">&#x27;o&#x27;</span>, <span class="hljs-string">&#x27;r&#x27;</span>, <span class="hljs-string">&#x27;k&#x27;</span>]<br>[<span class="hljs-string">&#x27;▁&#x27;</span>, <span class="hljs-string">&#x27;New&#x27;</span>, <span class="hljs-string">&#x27;▁York&#x27;</span>]<br>[<span class="hljs-string">&#x27;▁&#x27;</span>, <span class="hljs-string">&#x27;New&#x27;</span>, <span class="hljs-string">&#x27;▁York&#x27;</span>]<br><br></code></pre></td></tr></table></figure></p>
+<h2 id="代码实现和分析"><a href="#代码实现和分析" class="headerlink" title="代码实现和分析"></a>代码实现和分析</h2><p>上面分析了这么多, 有点空中楼阁的感觉, 会难以理解sentencepiece到底是如何实现. 下面结合源码分析, 更容易懂.</p>
+<p>github的sentencepiece源码在这里: <a target="_blank" rel="noopener" href="https://github.com/google/sentencepiece/tree/master">github SentencePiece</a>. </p>
+<h3 id="安装sentencepiece"><a href="#安装sentencepiece" class="headerlink" title="安装sentencepiece"></a>安装sentencepiece</h3><p>sentencepiece提供了python安装包, 和C++安装包. 下面只介绍python语言下面的安装和代码分析. </p>
+<p>python安装很简单:<br><figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs cmake">pip <span class="hljs-keyword">install</span> sentencepiece<br></code></pre></td></tr></table></figure></p>
+<p>然后下载一个文本, 用以训练分词器模型.<br><figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs 1c"><span class="hljs-meta"># !wget https:<span class="hljs-comment">//raw.githubusercontent.com/google/sentencepiece/master/data/botchan.txt</span></span><br></code></pre></td></tr></table></figure></p>
+<h3 id="基本操作"><a href="#基本操作" class="headerlink" title="基本操作"></a>基本操作</h3><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs routeros">import sentencepiece as spm<br>dataset_path = <span class="hljs-string">&#x27;./mydataset/botchan.txt&#x27;</span><br>spm.SentencePieceTrainer.train(<span class="hljs-attribute">input</span>=dataset_path, <span class="hljs-attribute">model_prefix</span>=<span class="hljs-string">&#x27;m&#x27;</span>, <span class="hljs-attribute">vocab_size</span>=2000)<br><br><span class="hljs-comment"># makes segmenter instance and loads the model file (m.model)</span><br>sp = spm.SentencePieceProcessor()<br>sp.load(<span class="hljs-string">&#x27;m.model&#x27;</span>)<br><br><span class="hljs-comment"># encode: text =&gt; id</span><br><span class="hljs-built_in">print</span>(sp.encode_as_pieces(<span class="hljs-string">&#x27;This is a test&#x27;</span>))<br><span class="hljs-built_in">print</span>(sp.encode_as_ids(<span class="hljs-string">&#x27;This is a test&#x27;</span>))<br><br><span class="hljs-comment"># decode: id =&gt; text</span><br><span class="hljs-built_in">print</span>(sp.decode_pieces([<span class="hljs-string">&#x27;▁This&#x27;</span>, <span class="hljs-string">&#x27;▁is&#x27;</span>, <span class="hljs-string">&#x27;▁a&#x27;</span>, <span class="hljs-string">&#x27;▁t&#x27;</span>, <span class="hljs-string">&#x27;est&#x27;</span>]))<br><span class="hljs-built_in">print</span>(sp.decode_ids([209, 31, 9, 375, 586]))<br></code></pre></td></tr></table></figure>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs pgsql"># <span class="hljs-keyword">returns</span> vocab size<br>print(sp.get_piece_size())<br><br># id &lt;=&gt; piece <span class="hljs-keyword">conversion</span><br>print(sp.id_to_piece(<span class="hljs-number">209</span>))<br>print(sp.piece_to_id(<span class="hljs-string">&#x27;▁This&#x27;</span>))<br><br># <span class="hljs-keyword">returns</span> <span class="hljs-number">0</span> <span class="hljs-keyword">for</span> <span class="hljs-type">unknown</span> tokens (we can change the id <span class="hljs-keyword">for</span> UNK)<br>print(sp.piece_to_id(<span class="hljs-string">&#x27;__MUST_BE_UNKNOWN__&#x27;</span>))<br><br># &lt;unk&gt;, &lt;s&gt;, &lt;/s&gt; are defined <span class="hljs-keyword">by</span> <span class="hljs-keyword">default</span>. Their ids are (<span class="hljs-number">0</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>)<br># &lt;s&gt; <span class="hljs-keyword">and</span> &lt;/s&gt; are defined <span class="hljs-keyword">as</span> <span class="hljs-string">&#x27;control&#x27;</span> symbol.<br><span class="hljs-keyword">for</span> id <span class="hljs-keyword">in</span> range(<span class="hljs-number">3</span>):<br>  print(sp.id_to_piece(id), sp.is_control(id))<br></code></pre></td></tr></table></figure>
+<h3 id="两种特殊符号"><a href="#两种特殊符号" class="headerlink" title="两种特殊符号"></a>两种特殊符号</h3><ol>
+<li>user defined symbols: 用户自己定义的特殊符号. 在input sentence中会显示出来.</li>
+<li>control symbol: 只会保留control symbol tokens的id. 这些控制符号不会出现在输入文本中.</li>
+</ol>
+<p>你也可以自己定义特殊符号, 在user_defined_symbols参数里面; 或者在control_symbols里面.</p>
+<p>下面这个例子, 我定义了两个user_defined_symbols. 输入的文本中包含这两种符号, 在文本切分后,<br>每种符号被单独当作一个piece, 然后转为ids, 每种特殊符号对应一个ids, 这里就分别对应的3和4.<br><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs routeros"><span class="hljs-comment"># Example of user defined symbols</span><br>dataset_path = <span class="hljs-string">&#x27;./mydataset/botchan.txt&#x27;</span><br>spm.SentencePieceTrainer.train(<span class="hljs-attribute">input</span>=dataset_path, <span class="hljs-attribute">model_prefix</span>=<span class="hljs-string">&#x27;m_user&#x27;</span>, <span class="hljs-attribute">user_defined_symbols</span>=<span class="hljs-string">&#x27;&lt;sep&gt;,&lt;cls&gt;&#x27;</span>,  <span class="hljs-attribute">vocab_size</span>=2000)<br><br>sp_user = spm.SentencePieceProcessor()<br>sp_user.load(<span class="hljs-string">&#x27;m_user.model&#x27;</span>)<br><br><span class="hljs-comment"># ids are reserved in both mode.</span><br><span class="hljs-comment"># &lt;unk&gt;=0, &lt;s&gt;=1, &lt;/s&gt;=2, &lt;sep&gt;=3, &lt;cls&gt;=4</span><br><span class="hljs-comment"># user defined symbols allow these symbols to appear in the text.</span><br><span class="hljs-built_in">print</span>(sp_user.encode_as_pieces(<span class="hljs-string">&#x27;this is a test&lt;sep&gt; hello world&lt;cls&gt;&#x27;</span>))<br><span class="hljs-built_in">print</span>(sp_user.piece_to_id(<span class="hljs-string">&#x27;&lt;sep&gt;&#x27;</span>))  # 3<br><span class="hljs-built_in">print</span>(sp_user.piece_to_id(<span class="hljs-string">&#x27;&lt;cls&gt;&#x27;</span>))  # 4<br><span class="hljs-built_in">print</span>(sp_user.id_to_piece([3]))  # [<span class="hljs-string">&#x27;&lt;sep&gt;&#x27;</span>]<br><span class="hljs-built_in">print</span>(sp_ctrl.id_to_piece([4]))  # [<span class="hljs-string">&#x27;&lt;cls&gt;&#x27;</span>]<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;3=&#x27;</span>, sp_user.decode_ids([3]))  # 3= &lt;sep&gt;<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;4=&#x27;</span>, sp_user.decode_ids([4]))  # 4= &lt;cls&gt;<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;3=&#x27;</span>, sp_user.decode_pieces([<span class="hljs-string">&#x27;&lt;sep&gt;&#x27;</span>]))  # 3= &lt;sep&gt;<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;4=&#x27;</span>, sp_user.decode_pieces([<span class="hljs-string">&#x27;&lt;cls&gt;&#x27;</span>]))  # 4= &lt;cls&gt;<br></code></pre></td></tr></table></figure></p>
+<p>如果, 我定义的是control_symbols, 有什么区别呢, 看看下面例子.<br>input text中有特殊符号$&lt; sep >, &lt; cls >$, 但是分词器只把他们当作普通文本进行切分, 切分为多个tokens.<br>ids里面的3和4对应这两个特殊符号, 使用id_to_piece, 和piece_to_id可以得到.<br>但是使用decode解码, 无法得到解码后文本, 返回为空.<br><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs routeros">spm.SentencePieceTrainer.train(<span class="hljs-string">&#x27;--input=./mydataset/botchan.txt --model_prefix=m_ctrl --control_symbols=&lt;sep&gt;,&lt;cls&gt; --vocab_size=2000&#x27;</span>)<br><br>sp_ctrl = spm.SentencePieceProcessor()<br>sp_ctrl.load(<span class="hljs-string">&#x27;m_ctrl.model&#x27;</span>)<br><br><span class="hljs-comment"># control symbols just reserve ids.</span><br><span class="hljs-built_in">print</span>(sp_ctrl.encode_as_pieces(<span class="hljs-string">&#x27;this is a test&lt;sep&gt; hello world&lt;cls&gt;&#x27;</span>))<br><span class="hljs-built_in">print</span>(sp_ctrl.piece_to_id(<span class="hljs-string">&#x27;&lt;sep&gt;&#x27;</span>))  # 3<br><span class="hljs-built_in">print</span>(sp_ctrl.piece_to_id(<span class="hljs-string">&#x27;&lt;cls&gt;&#x27;</span>))  # 4<br><span class="hljs-built_in">print</span>(sp_ctrl.id_to_piece([3]))  # [<span class="hljs-string">&#x27;&lt;sep&gt;&#x27;</span>]<br><span class="hljs-built_in">print</span>(sp_ctrl.id_to_piece([4]))  # [<span class="hljs-string">&#x27;&lt;cls&gt;&#x27;</span>]<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;3=&#x27;</span>, sp_ctrl.decode_ids([3]))  # decoded <span class="hljs-keyword">to</span> empty<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;4=&#x27;</span>, sp_ctrl.decode_ids([4]))  # decoded <span class="hljs-keyword">to</span> empty<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;3=&#x27;</span>, sp_ctrl.decode_pieces([<span class="hljs-string">&#x27;&lt;sep&gt;&#x27;</span>]))  # decoded <span class="hljs-keyword">to</span> empty<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;4=&#x27;</span>, sp_ctrl.decode_pieces([<span class="hljs-string">&#x27;&lt;cls&gt;&#x27;</span>]))  # decoded <span class="hljs-keyword">to</span> empty<br></code></pre></td></tr></table></figure></p>
+<h3 id="unigram和BPE两种模型类型"><a href="#unigram和BPE两种模型类型" class="headerlink" title="unigram和BPE两种模型类型"></a>unigram和BPE两种模型类型</h3><p>有两种类型: unigram(by default), 和BPE (—model_type=bpe).<br>这两种模型类型, 在文本质量上没有明显差异, 但是unigram model可以执行sampling和n-best segmentation.<br><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs routeros">spm.SentencePieceTrainer.train(<span class="hljs-string">&#x27;--input=./mydataset/botchan.txt --model_prefix=m_bpe --vocab_size=2000 --model_type=bpe&#x27;</span>)<br><br>sp_bpe = spm.SentencePieceProcessor()<br>sp_bpe.load(<span class="hljs-string">&#x27;m_bpe.model&#x27;</span>)<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;*** BPE ***&#x27;</span>)<br><span class="hljs-built_in">print</span>(sp_bpe.encode_as_pieces(<span class="hljs-string">&#x27;thisisatesthelloworld&#x27;</span>))<br><span class="hljs-built_in">print</span>(sp_bpe.nbest_encode_as_pieces(<span class="hljs-string">&#x27;hello world&#x27;</span>, 5))  # returns an empty list.<br></code></pre></td></tr></table></figure><br><figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs stylus">spm<span class="hljs-selector-class">.SentencePieceTrainer</span><span class="hljs-selector-class">.train</span>(<span class="hljs-string">&#x27;--input=./mydataset/botchan.txt --model_prefix=m_unigram --vocab_size=2000 --model_type=unigram&#x27;</span>)<br>sp_unigram = spm<span class="hljs-selector-class">.SentencePieceProcessor</span>()<br>sp_unigram<span class="hljs-selector-class">.load</span>(<span class="hljs-string">&#x27;m_unigram.model&#x27;</span>)<br><br><span class="hljs-function"><span class="hljs-title">print</span><span class="hljs-params">(<span class="hljs-string">&#x27;*** Unigram ***&#x27;</span>)</span></span><br><span class="hljs-function"><span class="hljs-title">print</span><span class="hljs-params">(sp_unigram.encode_as_pieces(<span class="hljs-string">&#x27;thisisatesthelloworld&#x27;</span>)</span></span>)<br><span class="hljs-function"><span class="hljs-title">print</span><span class="hljs-params">(sp_unigram.nbest_encode_as_pieces(<span class="hljs-string">&#x27;thisisatesthelloworld&#x27;</span>, <span class="hljs-number">5</span>)</span></span>)<br></code></pre></td></tr></table></figure></p>
+<h3 id="character和word两种模型类型"><a href="#character和word两种模型类型" class="headerlink" title="character和word两种模型类型"></a>character和word两种模型类型</h3><p>sentencepiece提供character和word两种切分方式, 但是这两种方式肯定没有上面的BPE和unigram这两个sub-word的切分方式高级. 分别使用参数 model_type=char, model_type=word.<br>在word segmentation中, input text被切分为一个个word, 空格会表示为下划线跟在单词前面.<br>char segmentation中, input text被分为一个个字母, 空格当作一个下划线字母.<br><figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs stylus">spm<span class="hljs-selector-class">.SentencePieceTrainer</span><span class="hljs-selector-class">.train</span>(<span class="hljs-string">&#x27;--input=./mydataset/botchan.txt --model_prefix=m_char --model_type=char --vocab_size=2000&#x27;</span>)<br><br>sp_char = spm<span class="hljs-selector-class">.SentencePieceProcessor</span>()<br>sp_char<span class="hljs-selector-class">.load</span>(<span class="hljs-string">&#x27;m_char.model&#x27;</span>)<br><br><span class="hljs-function"><span class="hljs-title">print</span><span class="hljs-params">(sp_char.encode_as_pieces(<span class="hljs-string">&#x27;this is a test.&#x27;</span>)</span></span>)<br><span class="hljs-function"><span class="hljs-title">print</span><span class="hljs-params">(sp_char.encode_as_ids(<span class="hljs-string">&#x27;this is a test.&#x27;</span>)</span></span>)<br></code></pre></td></tr></table></figure></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs routeros">spm.SentencePieceTrainer.train(<span class="hljs-string">&#x27;--input=./mydataset/botchan.txt --model_prefix=m_word --model_type=word --vocab_size=2000&#x27;</span>)<br><br>sp_word = spm.SentencePieceProcessor()<br>sp_word.load(<span class="hljs-string">&#x27;m_word.model&#x27;</span>)<br><br><span class="hljs-built_in">print</span>(sp_word.encode_as_pieces(<span class="hljs-string">&#x27;this is a test.&#x27;</span>))  # <span class="hljs-string">&#x27;.&#x27;</span> will <span class="hljs-keyword">not</span> be one token.<br><span class="hljs-built_in">print</span>(sp_word.encode_as_ids(<span class="hljs-string">&#x27;this is a test.&#x27;</span>))<br></code></pre></td></tr></table></figure>
+<h2 id="资源链接"><a href="#资源链接" class="headerlink" title="资源链接"></a>资源链接</h2><p>github官方代码: <a target="_blank" rel="noopener" href="https://github.com/google/sentencepiece/tree/master">github SentencePiece Tokenizer</a></p>
+<p>详细的SentenecPiece代码使用看这里: <a target="_blank" rel="noopener" href="https://github.com/google/sentencepiece/blob/master/python/sentencepiece_python_module_example.ipynb">sentencepiece_python_module_example.ipynb</a></p>
+<p>Byte Pair Encoding (BPE) 方法的论文: <a target="_blank" rel="noopener" href="https://aclanthology.org/P16-1162.pdf">Neural Machine Translation of Rare Words with Subword Units</a>, 和<a target="_blank" rel="noopener" href="https://paperswithcode.com/paper/neural-machine-translation-of-rare-words-with">代码</a>.</p>
+<p>Unigram方法的论文: <a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1804.10959">Subword Regularization: Improving Neural Network Translation Models with Multiple Subword Candidates</a></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/zh-hans/categories/ML%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" class="category-chain-item">ML基础知识</a>
+  
+  
+    <span>></span>
+    
+  <a href="/zh-hans/categories/ML%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/Tokenizer/" class="category-chain-item">Tokenizer</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/zh-hans/tags/tokenizer/" class="print-no-link">#tokenizer</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>详细介绍Google的SentencePiece</div>
+      <div>https://kangkang37.github.io/zh-hans/2024/07/29/sentencepiece/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>kq</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年7月29日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/zh-hans/2024/08/19/peft/" title="综述大模型的参数高效微调(PEFT)方法">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">综述大模型的参数高效微调(PEFT)方法</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/zh-hans/2024/07/21/llama2/" title="llama2模型的结构和原理">
+                        <span class="hidden-mobile">llama2模型的结构和原理</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="" ><span>Kangkang</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/kangkang37" target="_blank" rel="nofollow noopener"><span>GitHub</span></a>     
+    </div>
+  
+  
+    <div class="statistics">
+  
+  
+
+  
+    
+      <span id="leancloud-site-pv-container" style="display: none">
+        点击量: 
+        <span id="leancloud-site-pv"></span>
+         ,
+      </span>
+    
+    
+      <span id="leancloud-site-uv-container" style="display: none">
+        访问人数: 
+        <span id="leancloud-site-uv"></span>
+         
+      </span>
+    
+    
+
+  
+</div>
+
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/zh-hans/js/events.js" ></script>
+<script  src="/zh-hans/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/zh-hans/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            loader : {
+              load: ['ui/lazy']
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.2/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/zh-hans/js/leancloud.js" ></script>
+
+  <script  src="/zh-hans/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/zh-hans/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>

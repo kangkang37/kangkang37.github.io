@@ -1,0 +1,836 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/zh-hans/img/fluid.png">
+  <link rel="icon" href="/zh-hans/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="kq">
+  <meta name="keywords" content="hexo, blog, ai, artificial intelligence">
+  
+    <meta name="description" content="GPT2模型原理的通俗理解GPT2和只带有解码器decoder的transformer模型很像. 它有超大规模,是一个在海量数据集上基于transformer解码器训练的模型.  BERT模型则是通过transformer编码器模块构建的.   通俗而言,gpt2就是根据现有句子,预测下一个单词会是什么. 它像传统的语言模型一样, 一次只输出一个单词token, 每次产生新单词后,该单词会被添加在">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GPT2模型原理的通俗理解">
+<meta property="og:url" content="https://kangkang37.github.io/zh-hans/2024/07/10/gpt01/index.html">
+<meta property="og:site_name" content="KQ&#39;s AI Blog">
+<meta property="og:description" content="GPT2模型原理的通俗理解GPT2和只带有解码器decoder的transformer模型很像. 它有超大规模,是一个在海量数据集上基于transformer解码器训练的模型.  BERT模型则是通过transformer编码器模块构建的.   通俗而言,gpt2就是根据现有句子,预测下一个单词会是什么. 它像传统的语言模型一样, 一次只输出一个单词token, 每次产生新单词后,该单词会被添加在">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/10/gpt01/gpt0101.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/10/gpt01/gpt0102.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/10/gpt01/gpt0103.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/10/gpt01/gpt0104.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/10/gpt01/gpt0105.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/10/gpt01/gpt0106.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/10/gpt01/gpt0107.png">
+<meta property="article:published_time" content="2024-07-10T23:53:26.000Z">
+<meta property="article:modified_time" content="2024-07-10T22:08:04.930Z">
+<meta property="article:author" content="kq">
+<meta property="article:tag" content="GPT">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://kangkang37.github.io/zh-hans/2024/07/10/gpt01/gpt0101.png">
+  
+  
+  
+  <title>GPT2模型原理的通俗理解 - KQ&#39;s AI Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/zh-hans/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/zh-hans/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/zh-hans/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"kangkang37.github.io","root":"/zh-hans/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Oy95QsXXN5Dq2RLD8evjzYEP-MdYXbMMI","app_key":"g2P9HRXegX1XhaV3or2pH3zk","server_url":null,"path":"window.location.pathname","ignore_local":true}},"search_path":"/zh-hans/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/zh-hans/js/utils.js" ></script>
+  <script  src="/zh-hans/js/color-schema.js" ></script>
+  
+
+  
+
+  
+    <!-- Google tag (gtag.js) -->
+    <script async>
+      if (!Fluid.ctx.dnt) {
+        Fluid.utils.createScript("https://www.googletagmanager.com/gtag/js?id=", function() {
+          window.dataLayer = window.dataLayer || [];
+          function gtag() {
+            dataLayer.push(arguments);
+          }
+          gtag('js', new Date());
+          gtag('config', '');
+        });
+      }
+    </script>
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<script src="/zh-hans/js/hexo_resize_image.js"></script> 
+<!-- ## -->
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/zh-hans/">
+      <strong>KQ&#39;s AI Blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="https://kangkang37.github.io" target="_self">
+                <i class="iconfont icon-language"></i>
+                <span>language</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/zh-hans/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="GPT2模型原理的通俗理解"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        kq
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-07-10 16:53" pubdate>
+          2024年7月10日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.5k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          13 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="leancloud-page-views"></span> 次
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">GPT2模型原理的通俗理解</h1>
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    本文最后更新于 2024年7月10日下午3点08分
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="GPT2模型原理的通俗理解"><a href="#GPT2模型原理的通俗理解" class="headerlink" title="GPT2模型原理的通俗理解"></a>GPT2模型原理的通俗理解</h1><p>GPT2和只带有解码器decoder的transformer模型很像. 它有超大规模,是一个在海量数据集上基于transformer解码器训练的模型.  BERT模型则是通过transformer编码器模块构建的.  </p>
+<p>通俗而言,gpt2就是根据现有句子,预测下一个单词会是什么. 它像传统的语言模型一样, 一次只输出一个单词token, 每次产生新单词后,该单词会被添加在之前生成的单词序列之后, 这个序列会成为模型下一步的新输入. 这种机制叫做<u>自回归(auto-regression)</u>, 也是令RNN效果超群的重要思想.  BERT没有使用自回归机制, BERT获得了结合单词前后的上下文信息的能力, 也能取得很好的效果.  </p>
+<h2 id="浅析内部结构"><a href="#浅析内部结构" class="headerlink" title="浅析内部结构"></a>浅析内部结构</h2><p>下面看GPT2的内部结构, 它是如何工作的:<br>GPT-2最长可以处理1024个token的序列,每个token都会和它的前续路径一起‘流过’所有的decoder模块.<br>假设现在gpt2已经训练好了, 只需要提供一个预先定义好的起始单词(训练好的模型会使用endoftext作为起始单词,不妨称其为s), 然后让它自己生成文字.<br><img src="/zh-hans/2024/07/10/gpt01/gpt0101.png" srcset="/zh-hans/img/loading.gif" lazyload alt="输入一个起始单词s让其自己生成下一个单词"><br>此时, 模型的输入只有一个单词, 经过层层处理, 最终得到一个输出向量. 向量对词汇表中每个单词计算一个概率, 选择概率最高的单词作为输出单词, 假设‘The’作为输出.<br>但这样有一个问题: 它可能会陷入推荐同一个单词的循环中, 比如一直重复输出概率最高的单词‘The’, 只有选择概率第2或者第3的单词才能跳出这个循环.  所以, gpt2会有一个叫做‘top-k’的参数, 模型从概率前k的单词中随机抽取下一个单词.<br><img src="/zh-hans/2024/07/10/gpt01/gpt0102.png" srcset="/zh-hans/img/loading.gif" lazyload alt="生成单词The, 继续输入The预测下一个单词"></p>
+<h2 id="深入理解内部原理"><a href="#深入理解内部原理" class="headerlink" title="深入理解内部原理"></a>深入理解内部原理</h2><h3 id="嵌入矩阵和位置编码"><a href="#嵌入矩阵和位置编码" class="headerlink" title="嵌入矩阵和位置编码"></a>嵌入矩阵和位置编码</h3><p>模型首先输入一个句子, 句子先tokenizer分词(以subword为基本离散单位)为一个个子词subword, 每个子词用词表中的index表示, 词表大小为50257.<br>然后通过嵌入矩阵, 找到每个子词对应的词向量. 嵌入矩阵的行数=词表长度50257, 嵌入矩阵的列数=embedding size, 即每个子词对应的词向量的长度. 最小的gpt-small模型会有1*768的长度表示一个子词.<br><img src="/zh-hans/2024/07/10/gpt01/gpt0103.png" srcset="/zh-hans/img/loading.gif" lazyload alt="嵌入矩阵的结构, 各版本gpt对应的词向量长度"><br>嵌入矩阵的每一行都是一个词嵌入向量. 最开始, 需要从嵌入矩阵中找到起始单词s对应的词向量. 然后引入位置编码, 位置编码矩阵如下, 行数表示输入的context的长度(即一个句子分解为子词的个数), 列数同样为embedding size:<br><img src="/zh-hans/2024/07/10/gpt01/gpt0104.png" srcset="/zh-hans/img/loading.gif" lazyload alt="位置编码矩阵的结构"></p>
+<p>输入的单词经过嵌入矩阵和位置编码后, 进入transformer之前的步骤就完成了. 然后经过第一个transformer-decoder模块:<br>首先是自注意力层 masked self-attention, 然后传输给feed forward neural network.  第一个decoder模块完成后, 会把结果向量传给第二个decoder模块, 每个decoder模块的处理方式都是一样的, 但每个模块会维护自己的自注意力层和feed forward层的权重.  </p>
+<h3 id="自注意力机制"><a href="#自注意力机制" class="headerlink" title="自注意力机制"></a>自注意力机制</h3><p>从之前的attention帖子<a href="/zh-hans/2024/07/05/attention/" title="详细理解attention的原理">详细理解attention的原理</a>, 我们了解到自注意力机制的公式: </p>
+<script type="math/tex; mode=display">
+attention(Q,K,V)=softmax(\frac{QK^T}{\sqrt{d_k}})V</script><p>自注意力机制就是: 对序列中每个单词, 都赋予一个相关度得分$softmax(\frac{QK^T}{\sqrt{d_k}})$, 然后对他们的向量表征$V$乘以这个相关度得分, 即对向量表征加权求和, 所加的这个权重是相关度得分.  </p>
+<p>自注意力机制中的Query, Key和Value的含义: </p>
+<ul>
+<li>Query查询向量: 当前单词的查询向量被用来和其它单词的键向量相乘，从而得到其它词相对于当前词的注意力得分。只关心目前正在处理的单词的查询向量。</li>
+<li>Key键向量: 键向量就像是序列中每个单词的标签，它使搜索相关单词时用来匹配的对象。</li>
+<li>Value值向量: 值向量是单词真正的表征，当算出注意力得分后，使用值向量进行加权求和得到能代表当前位置上下文的向量。</li>
+</ul>
+<p><img src="/zh-hans/2024/07/10/gpt01/gpt0105.png" srcset="/zh-hans/img/loading.gif" lazyload alt="自注意力机制比喻: 在档案柜中找文件"><br>一个简单粗暴的比喻是在档案柜中找文件。查询向量就像一张便利贴，上面写着你正在研究的课题。键向量像是档案柜中文件夹上贴的标签。当你找到和便利贴上所写相匹配的文件夹时，拿出它，文件夹里的东西便是值向量。</p>
+<p>将单词的查询向量分别乘以每个文件夹的键向量，得到各个文件夹对应的注意力得分（这里的乘指的是向量点乘，乘积会通过 softmax 函数处理）。</p>
+<p>将每个文件夹的值向量乘以其对应的注意力得分，然后求和，得到最终自注意力层的输出。<br><img src="/zh-hans/2024/07/10/gpt01/gpt0106.png" srcset="/zh-hans/img/loading.gif" lazyload alt="值向量的加权求和, 权重是注意力得分"></p>
+<h3 id="模型输出"><a href="#模型输出" class="headerlink" title="模型输出"></a>模型输出</h3><p>向量经过自注意力机制和feed forward层后,得到输出向量, 这个向量和嵌入矩阵相乘, 得到词汇表中每个单词的注意力得分. 因为嵌入矩阵$M$大小为$50257 \times 768$, 输出向量$X$的大小: $1\times 768$, $size (M \times X^T) = 50257 \times 1$.<br>选取得分最高的单词为输出结果(top-k=1时). 但更好的策略是选择得分较高的一部分单词,将他们的得分作为概率从整个单词表中抽样(得分高的单词更容易选中). 一般的, top-k=40.<br><img src="/zh-hans/2024/07/10/gpt01/gpt0107.png" srcset="/zh-hans/img/loading.gif" lazyload alt="输出向量和嵌入矩阵相乘得到每个单词概率"><br>以上, 模型完成了一次迭代. 模型不断迭代直到生成一个完成序列, 序列得到1024或者生成终止符. </p>
+<h2 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h2><p>BERT模型的原理结构<br>代码中的gpt2</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p>中文博客园: <a target="_blank" rel="noopener" href="https://www.cnblogs.com/zhongzhaoxie/p/13064404.html">GPT-2通俗理解</a><br>Jay Alammar博客: <a target="_blank" rel="noopener" href="https://jalammar.github.io/illustrated-transformer/">The Illustrated Transformer</a></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/zh-hans/categories/ML%E5%B8%B8%E8%A7%81%E6%A8%A1%E5%9E%8B/" class="category-chain-item">ML常见模型</a>
+  
+  
+    <span>></span>
+    
+  <a href="/zh-hans/categories/ML%E5%B8%B8%E8%A7%81%E6%A8%A1%E5%9E%8B/GPT/" class="category-chain-item">GPT</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/zh-hans/tags/GPT/" class="print-no-link">#GPT</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>GPT2模型原理的通俗理解</div>
+      <div>https://kangkang37.github.io/zh-hans/2024/07/10/gpt01/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>kq</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年7月10日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/zh-hans/2024/07/19/loss-func/" title="常见损失函数介绍">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">常见损失函数介绍</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/zh-hans/2024/07/10/papers-paper-pim/" title="HMA论文-存内计算方向">
+                        <span class="hidden-mobile">HMA论文-存内计算方向</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="" ><span>Kangkang</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/kangkang37" target="_blank" rel="nofollow noopener"><span>GitHub</span></a>     
+    </div>
+  
+  
+    <div class="statistics">
+  
+  
+
+  
+    
+      <span id="leancloud-site-pv-container" style="display: none">
+        点击量: 
+        <span id="leancloud-site-pv"></span>
+         ,
+      </span>
+    
+    
+      <span id="leancloud-site-uv-container" style="display: none">
+        访问人数: 
+        <span id="leancloud-site-uv"></span>
+         
+      </span>
+    
+    
+
+  
+</div>
+
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/zh-hans/js/events.js" ></script>
+<script  src="/zh-hans/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/zh-hans/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            loader : {
+              load: ['ui/lazy']
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.2/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/zh-hans/js/leancloud.js" ></script>
+
+  <script  src="/zh-hans/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/zh-hans/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>

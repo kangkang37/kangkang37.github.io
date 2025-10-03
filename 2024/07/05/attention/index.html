@@ -1,0 +1,859 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/zh-hans/img/fluid.png">
+  <link rel="icon" href="/zh-hans/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="kq">
+  <meta name="keywords" content="hexo, blog, ai, artificial intelligence">
+  
+    <meta name="description" content="详细理解attention的原理transformer中最重要的就是attention block。这里会详细理解各种类型的attention block：  注意力机制attention 自注意力机制 self-attention 多头注意力机制 multi-head attention 掩码注意力机制 masked multi-head attention 交叉注意力机制 cross atte">
+<meta property="og:type" content="article">
+<meta property="og:title" content="详细理解attention的原理">
+<meta property="og:url" content="https://kangkang37.github.io/zh-hans/2024/07/05/attention/index.html">
+<meta property="og:site_name" content="KQ&#39;s AI Blog">
+<meta property="og:description" content="详细理解attention的原理transformer中最重要的就是attention block。这里会详细理解各种类型的attention block：  注意力机制attention 自注意力机制 self-attention 多头注意力机制 multi-head attention 掩码注意力机制 masked multi-head attention 交叉注意力机制 cross atte">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/05/attention/attention05.png?50*">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/05/attention/attention01.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/05/attention/attention02.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/05/attention/attention03.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/05/attention/attention04.png?35">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/05/attention/attention06.png?50">
+<meta property="article:published_time" content="2024-07-06T04:03:21.000Z">
+<meta property="article:modified_time" content="2024-07-08T01:12:36.851Z">
+<meta property="article:author" content="kq">
+<meta property="article:tag" content="transformer">
+<meta property="article:tag" content="NLP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://kangkang37.github.io/zh-hans/2024/07/05/attention/attention05.png?50*">
+  
+  
+  
+  <title>详细理解attention的原理 - KQ&#39;s AI Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/zh-hans/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/zh-hans/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/zh-hans/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"kangkang37.github.io","root":"/zh-hans/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Oy95QsXXN5Dq2RLD8evjzYEP-MdYXbMMI","app_key":"g2P9HRXegX1XhaV3or2pH3zk","server_url":null,"path":"window.location.pathname","ignore_local":true}},"search_path":"/zh-hans/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/zh-hans/js/utils.js" ></script>
+  <script  src="/zh-hans/js/color-schema.js" ></script>
+  
+
+  
+
+  
+    <!-- Google tag (gtag.js) -->
+    <script async>
+      if (!Fluid.ctx.dnt) {
+        Fluid.utils.createScript("https://www.googletagmanager.com/gtag/js?id=", function() {
+          window.dataLayer = window.dataLayer || [];
+          function gtag() {
+            dataLayer.push(arguments);
+          }
+          gtag('js', new Date());
+          gtag('config', '');
+        });
+      }
+    </script>
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<script src="/zh-hans/js/hexo_resize_image.js"></script> 
+<!-- ## -->
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/zh-hans/">
+      <strong>KQ&#39;s AI Blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="https://kangkang37.github.io" target="_self">
+                <i class="iconfont icon-language"></i>
+                <span>language</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/zh-hans/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="详细理解attention的原理"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        kq
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-07-05 21:03" pubdate>
+          2024年7月5日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.6k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          14 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="leancloud-page-views"></span> 次
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">详细理解attention的原理</h1>
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    本文最后更新于 2024年7月7日晚上6点12分
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="详细理解attention的原理"><a href="#详细理解attention的原理" class="headerlink" title="详细理解attention的原理"></a>详细理解attention的原理</h1><p>transformer中最重要的就是attention block。这里会详细理解各种类型的attention block：</p>
+<ol>
+<li>注意力机制attention</li>
+<li>自注意力机制 self-attention</li>
+<li>多头注意力机制 multi-head attention</li>
+<li>掩码注意力机制 masked multi-head attention</li>
+<li>交叉注意力机制 cross attention</li>
+</ol>
+<h2 id="1-Attention基本原理"><a href="#1-Attention基本原理" class="headerlink" title="1.Attention基本原理"></a>1.Attention基本原理</h2><p>transformer中的基本结构式self-attention，而在理解自注意力机制self-attention之前，需要理解什么是attention注意力机制。</p>
+<p>Attention会有Source和Target两个集合，Source中的元素想像成一系列的<Key,Value>数据对，而Target中有若干Query数据。<br>通过计算Query和各个元素Key的相似性，得到每个Key对应Value的权重系数，然后对Value进行加权求和，得到最终的Attention值。<br>本质上Attention机制是对Source中元素的Value值进行加权求和，而Query和Key用来计算对应Value的权重系数。</p>
+<p><strong>Attention分为三个阶段：</strong>  </p>
+<ul>
+<li>阶段1:Query与Key进行相似度计算得到权值</li>
+<li>阶段2:对上一阶段的计算的权重进行归一化</li>
+<li>阶段3:用归一化的权重与Value加权求和，得到Attention值</li>
+</ul>
+<p><strong>Attention和self-attention的区别：</strong><br>Attention的Source和Target是不同的，比如机器翻译任务中，Source是翻以前的英文句子，Target是翻译后的中文句子。而self-attention的Source和Target是同一个。</p>
+<p>Attention计算的是Source对Target的attention，而self-attention是Source内部元素之间或者Target内部元素之间发生的Attention机制，也可以理解为Target=Source这种特殊情况下的注意力计算机制。</p>
+<p>简单而言，在self-attention中，Q和K和V是同源的，即这三个张量是通过输入张量X经过线性变化（分别乘以矩阵$W^q, W^k, W^v$）得到的。而attention的Q和{K,V}是不同源的。  </p>
+<p>self.attention就是自己和自己做相识度计算，句子中每个词和句子中其他词计算相识度，利用上下文增强目标词的表达。 </p>
+<h2 id="2-Self-Attention基本原理"><a href="#2-Self-Attention基本原理" class="headerlink" title="2.Self-Attention基本原理"></a>2.Self-Attention基本原理</h2><p>self-attention这个机制是在论文‘attention is all you need’中提出的：<br><img src="/zh-hans/2024/07/05/attention/attention05.png?50*" srcset="/zh-hans/img/loading.gif" lazyload alt="Scaled Dot-Product Attention"></p>
+<p>NLP任务会输入一个句子，首先会通过tokenizer向量化，然后添加位置编码，得到这组向量：${a_1, a_2,…,a_n}$。 self-attention输入的就是这一组向量:${a_1, a_2,…,a_n}$，然后输出的是上下文关联的向量组:${b_1,b_2…}$.</p>
+<p><strong>为什么需要self-attention：</strong><br>一个句子，每个单词的上下文很重要，因为相同的单词在不同的上下文里的意思不同，如何让每个token向量考虑它的上下文？最简单的是使用sliding window，比如输入的句子是’I saw a saw.’, 滑动窗口的size=3时，每相邻的三个单词（为了简单理解，把每个单词看作一个token）输入给FC层，让每个单词可以学习到相邻的三个单词的信息。<br><img src="/zh-hans/2024/07/05/attention/attention01.png" srcset="/zh-hans/img/loading.gif" lazyload alt="使用sliding window来考虑上下文"><br>但是滑动窗口有局限性: 如果对某个单词想考虑整个句子的上下文，需要把window size调大覆盖整个句子吗？显然不现实，因为每个句子长度不同。而且window很长时，FC层（fully connected layer）的参数很多，难以训练。  </p>
+<p>为了让每个单词可以考虑上下文信息，这里提出了自注意力机制：输入一组向量${a_1, a_2,…,a_n}$，经过self-attention得到一组输出向量${b_1, b_2,…, b_n}$，为了方便理解假设输入的向量个数和输出的向量个数相等。<br>此刻，${b_i}$向量组中每个向量都是和整个句子上下文相关的，然后经过FC层和softmax得到预测概率。</p>
+<p>自注意力机制如何让每个${b_i}$向量都和${a_i}$向量相关呢？具体实现如下：<br><img src="/zh-hans/2024/07/05/attention/attention02.png" srcset="/zh-hans/img/loading.gif" lazyload alt="得到Q和K，alpha&#39;=softmax(QK^T/scale)"><br>首先每个$a_i$向量和参数矩阵$W^q, W^k$相乘，得到$q_i, k_i$，然后$\alpha_{ij}=q_i*k_j$,经过softmax函数得到$\alpha’$：</p>
+<script type="math/tex; mode=display">
+\alpha'_{1,i} = \frac{exp(\alpha_{1,i})}{\sum_{j} exp(\alpha_{1,j})}</script><p>然后$\alpha’_{1,i}$和$v_i$相乘得到$b_1$: $b_1=\sum_i \alpha’_{1,i}v_i$.<br><img src="/zh-hans/2024/07/05/attention/attention03.png" srcset="/zh-hans/img/loading.gif" lazyload alt="alpha&#39;和v_i相乘之和得到b_1"></p>
+<p>上面是把每个token向量的$q_i, k_i, v_i$向量单独看，但其实代码实现是直接把所有$q_i$向量合并看作$Q=[q_1,q_2,..q_n]$, K和V同理也是整个向量组的合并。<br>从整体张量分析，输入的张量$I=[a_1,a_2,..a_n]$,输出张量$O=[b_1,b_2…b_n]$:<br><img src="/zh-hans/2024/07/05/attention/attention04.png?35" srcset="/zh-hans/img/loading.gif" lazyload alt="从整体张量来看attention的流程"></p>
+<p>上面通过流程图直观理解了attention的实现原理，然后我们就可以理解论文“attention is all you need”中的这个数学公式：</p>
+<script type="math/tex; mode=display">
+attention(Q,K,V)=softmax(\frac{QK^T}{\sqrt{d_k}})V</script><h2 id="3-多头注意力机制-Multi-Head-Attention"><a href="#3-多头注意力机制-Multi-Head-Attention" class="headerlink" title="3.多头注意力机制 Multi-Head Attention"></a>3.多头注意力机制 Multi-Head Attention</h2><p>多头注意力机制，就是多个自注意力机制的结合。<br>直接看公式和流程图：</p>
+<script type="math/tex; mode=display">
+Q_i=QW_i^Q, K_i=KW_i^K, V_i=VW_i^V, i=1,2,..8  \\
+head_i=Attention(Q_i,K_i,V_i)  \\
+MultiHead(Q,K,V)=Concat(head_1, head_2,...,head_8)W^O</script><p><img src="/zh-hans/2024/07/05/attention/attention06.png?50" srcset="/zh-hans/img/loading.gif" lazyload alt="多头注意力机制的图示"></p>
+<p>之前每个输入向量$a_i$只会得到一组的${q_i,k_i,v_i}$，但是现在假设$n_head=8$，则每个$a_i$会得到8组的${q_{i,j},k_{i,j},v_{i,j}},j=1,2..8$，每一组q k v计算self-attention，然后得到的8组结果拼接起来乘以一个权重$W^O$.</p>
+<h2 id="4-掩码注意力机制"><a href="#4-掩码注意力机制" class="headerlink" title="4.掩码注意力机制"></a>4.掩码注意力机制</h2><p>在decoder中会使用到掩码注意力机制。在上面的self-attention中，生成的$b_1$向量会考虑所有输入向量$a_i$，生成$b_2$也会考虑所有的$a_i$。<br>但是masked之后，生成$b_1$只考虑$a_1$, $b_2$只考虑$a_1,a_2$，生成$b_k$只考虑$a_1,a_2..a_k$。因为对decoder而言，是先有a1，再有a2 再有a3，一个一个产生的，不是一次性得到所有的ai。</p>
+<h2 id="5-交叉注意力机制"><a href="#5-交叉注意力机制" class="headerlink" title="5.交叉注意力机制"></a>5.交叉注意力机制</h2><p>交叉注意力机制是混合两种不同嵌入序列的注意机制，两个序列必须具有相同的维度，两个序列可以是不同的模式形态（如：文本、声音、图像），一个序列（decoder序列）作为输入的Q，定义了输出的序列长度，另一个序列（encoder序列）提供输入的K和V。</p>
+<p>Cross-attention的输入来自不同的序列，Self-attention的输入来自同序列，除此之外，基本一致。</p>
+<h2 id="Pytorch代码实现"><a href="#Pytorch代码实现" class="headerlink" title="Pytorch代码实现"></a>Pytorch代码实现</h2><p>上面介绍的各种注意力机制的原理，这里是pytorch实现的，结合这个代码可以更好理解注意力机制如何实现：<br><a href="/zh-hans/2024/07/05/pytorch01_attn/" title="pytorch面试题：实现attention结构">pytorch面试题：实现attention结构</a></p>
+<h2 id="参考："><a href="#参考：" class="headerlink" title="参考："></a>参考：</h2><p>吴恩达机器学习网课：<a target="_blank" rel="noopener" href="https://speech.ee.ntu.edu.tw/~hylee/ml/2023-spring.php">https://speech.ee.ntu.edu.tw/~hylee/ml/2023-spring.php</a></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/zh-hans/categories/ML%E5%B8%B8%E8%A7%81%E6%A8%A1%E5%9E%8B/" class="category-chain-item">ML常见模型</a>
+  
+  
+    <span>></span>
+    
+  <a href="/zh-hans/categories/ML%E5%B8%B8%E8%A7%81%E6%A8%A1%E5%9E%8B/transformer/" class="category-chain-item">transformer</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/zh-hans/tags/transformer/" class="print-no-link">#transformer</a>
+      
+        <a href="/zh-hans/tags/NLP/" class="print-no-link">#NLP</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>详细理解attention的原理</div>
+      <div>https://kangkang37.github.io/zh-hans/2024/07/05/attention/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>kq</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年7月5日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/zh-hans/2024/07/05/optimizer/" title="优化器介绍I——BGD/SGD/MBGD">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">优化器介绍I——BGD/SGD/MBGD</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/zh-hans/2024/07/05/pytorch01_attn/" title="pytorch面试题：实现attention结构">
+                        <span class="hidden-mobile">pytorch面试题：实现attention结构</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="" ><span>Kangkang</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/kangkang37" target="_blank" rel="nofollow noopener"><span>GitHub</span></a>     
+    </div>
+  
+  
+    <div class="statistics">
+  
+  
+
+  
+    
+      <span id="leancloud-site-pv-container" style="display: none">
+        点击量: 
+        <span id="leancloud-site-pv"></span>
+         ,
+      </span>
+    
+    
+      <span id="leancloud-site-uv-container" style="display: none">
+        访问人数: 
+        <span id="leancloud-site-uv"></span>
+         
+      </span>
+    
+    
+
+  
+</div>
+
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/zh-hans/js/events.js" ></script>
+<script  src="/zh-hans/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/zh-hans/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            loader : {
+              load: ['ui/lazy']
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.2/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/zh-hans/js/leancloud.js" ></script>
+
+  <script  src="/zh-hans/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/zh-hans/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>

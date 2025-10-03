@@ -1,0 +1,817 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/zh-hans/img/fluid.png">
+  <link rel="icon" href="/zh-hans/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="kq">
+  <meta name="keywords" content="hexo, blog, ai, artificial intelligence">
+  
+    <meta name="description" content="pytorch面试题I：transformer中重要模块transformer中的attention机制很重要，面试中可能会让你手动实现attention。这里记录了transformer架构会考的重要知识点：    pytorch手动搭建ScaledDotProduct Attention； pytorch搭建multi-head attention； pytorch搭建self-attenti">
+<meta property="og:type" content="article">
+<meta property="og:title" content="pytorch面试题：实现attention结构">
+<meta property="og:url" content="https://kangkang37.github.io/zh-hans/2024/07/05/pytorch01_attn/index.html">
+<meta property="og:site_name" content="KQ&#39;s AI Blog">
+<meta property="og:description" content="pytorch面试题I：transformer中重要模块transformer中的attention机制很重要，面试中可能会让你手动实现attention。这里记录了transformer架构会考的重要知识点：    pytorch手动搭建ScaledDotProduct Attention； pytorch搭建multi-head attention； pytorch搭建self-attenti">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-07-06T04:00:23.000Z">
+<meta property="article:modified_time" content="2024-07-08T07:37:56.476Z">
+<meta property="article:author" content="kq">
+<meta property="article:tag" content="pytorch">
+<meta property="article:tag" content="coding">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>pytorch面试题：实现attention结构 - KQ&#39;s AI Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/zh-hans/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/zh-hans/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/zh-hans/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"kangkang37.github.io","root":"/zh-hans/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Oy95QsXXN5Dq2RLD8evjzYEP-MdYXbMMI","app_key":"g2P9HRXegX1XhaV3or2pH3zk","server_url":null,"path":"window.location.pathname","ignore_local":true}},"search_path":"/zh-hans/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/zh-hans/js/utils.js" ></script>
+  <script  src="/zh-hans/js/color-schema.js" ></script>
+  
+
+  
+
+  
+    <!-- Google tag (gtag.js) -->
+    <script async>
+      if (!Fluid.ctx.dnt) {
+        Fluid.utils.createScript("https://www.googletagmanager.com/gtag/js?id=", function() {
+          window.dataLayer = window.dataLayer || [];
+          function gtag() {
+            dataLayer.push(arguments);
+          }
+          gtag('js', new Date());
+          gtag('config', '');
+        });
+      }
+    </script>
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<script src="/zh-hans/js/hexo_resize_image.js"></script> 
+<!-- ## -->
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/zh-hans/">
+      <strong>KQ&#39;s AI Blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="https://kangkang37.github.io" target="_self">
+                <i class="iconfont icon-language"></i>
+                <span>language</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/zh-hans/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="pytorch面试题：实现attention结构"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        kq
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-07-05 21:00" pubdate>
+          2024年7月5日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          844 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          8 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="leancloud-page-views"></span> 次
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">pytorch面试题：实现attention结构</h1>
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    本文最后更新于 2024年7月8日凌晨12点37分
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="pytorch面试题I：transformer中重要模块"><a href="#pytorch面试题I：transformer中重要模块" class="headerlink" title="pytorch面试题I：transformer中重要模块"></a>pytorch面试题I：transformer中重要模块</h1><p>transformer中的attention机制很重要，面试中可能会让你手动实现attention。<br>这里记录了transformer架构会考的重要知识点：  </p>
+<ul>
+<li>pytorch手动搭建ScaledDotProduct Attention；</li>
+<li>pytorch搭建multi-head attention；</li>
+<li>pytorch搭建self-attention；</li>
+<li>基于numpy的位置编码的实现；</li>
+</ul>
+<p>首先import所需的库：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> torch<br><span class="hljs-keyword">import</span> torch.nn <span class="hljs-keyword">as</span> nn<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt<br></code></pre></td></tr></table></figure></p>
+<h2 id="1-单头注意力机制"><a href="#1-单头注意力机制" class="headerlink" title="1.单头注意力机制"></a>1.单头注意力机制</h2><p>使用pytorch实现Scaled Dot Product Attention：<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">class</span> <span class="hljs-title class_">ScaledDotProductAttention</span>(nn.Module):<br>    <span class="hljs-string">&quot;&quot;&quot; Scaled Dot-Product Attention &quot;&quot;&quot;</span><br> <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, scale</span>):<br>        <span class="hljs-built_in">super</span>().__init__()<br> <br>        self.scale = scale<br>        self.softmax = nn.Softmax(dim=<span class="hljs-number">2</span>)<br> <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">forward</span>(<span class="hljs-params">self, q, k, v, mask=<span class="hljs-literal">None</span></span>):<br>        u = torch.bmm(q, k.transpose(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>)) <span class="hljs-comment"># 1.Matmul</span><br>        u = u / self.scale <span class="hljs-comment"># 2.Scale</span><br> <br>        <span class="hljs-keyword">if</span> mask <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:<br>            u = u.masked_fill(mask, -np.inf) <span class="hljs-comment"># 3.Mask # mask为1的部分设置为-np.inf</span><br> <br>        attn = self.softmax(u) <span class="hljs-comment"># 4.Softmax</span><br>        output = torch.bmm(attn, v) <span class="hljs-comment"># 5.Output</span><br> <br>        <span class="hljs-keyword">return</span> attn, output<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&quot;__main__&quot;</span>:<br>    n_q, n_k, n_v = <span class="hljs-number">2</span>, <span class="hljs-number">4</span>, <span class="hljs-number">4</span><br>    d_q, d_k, d_v = <span class="hljs-number">128</span>, <span class="hljs-number">128</span>, <span class="hljs-number">64</span><br>    batch = <span class="hljs-number">4</span><br> <br>    q = torch.randn(batch, n_q, d_q)<br>    k = torch.randn(batch, n_k, d_k)<br>    v = torch.randn(batch, n_v, d_v)<br>    mask = torch.zeros(batch, n_q, n_k).<span class="hljs-built_in">bool</span>()<br> <br>    attention = ScaledDotProductAttention(scale=np.power(d_k, <span class="hljs-number">0.5</span>))<br>    attn, output = attention(q, k, v, mask=mask)<br> <br>    <span class="hljs-built_in">print</span>(attn)<br>    <span class="hljs-built_in">print</span>(output)<br></code></pre></td></tr></table></figure></p>
+<h2 id="2-多头注意力机制"><a href="#2-多头注意力机制" class="headerlink" title="2.多头注意力机制"></a>2.多头注意力机制</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">class</span> <span class="hljs-title class_">MultiHeadAttention</span>(nn.Module):<br>    <span class="hljs-string">&quot;&quot;&quot; Multi-Head Attention &quot;&quot;&quot;</span><br> <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, n_head, d_k_, d_v_, d_k, d_v, d_o</span>):<br>        <span class="hljs-built_in">super</span>().__init__()<br> <br>        self.n_head = n_head<br>        self.d_k = d_k<br>        self.d_v = d_v<br> <br>        self.fc_q = nn.Linear(d_k_, n_head * d_k) <span class="hljs-comment"># (in_feature, out_feature)</span><br>        self.fc_k = nn.Linear(d_k_, n_head * d_k)<br>        self.fc_v = nn.Linear(d_v_, n_head * d_v)<br> <br>        self.attention = ScaledDotProductAttention(scale=np.power(d_k, <span class="hljs-number">0.5</span>))<br> <br>        self.fc_o = nn.Linear(n_head * d_v, d_o)<br> <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">forward</span>(<span class="hljs-params">self, q, k, v, mask=<span class="hljs-literal">None</span></span>):<br> <br>        n_head, d_q, d_k, d_v = self.n_head, self.d_k, self.d_k, self.d_v<br> <br>        batch, n_q, d_q_ = q.size() <span class="hljs-comment"># q size=(batch_size, n_q, n_head*d_k) and d_k==d_q</span><br>        batch, n_k, d_k_ = k.size()<br>        batch, n_v, d_v_ = v.size()<br> <br>        q = self.fc_q(q) <span class="hljs-comment"># 1.单头变多头        </span><br>        k = self.fc_k(k)<br>        v = self.fc_v(v)<br>        q = q.view(batch, n_q, n_head, d_q).permute(<span class="hljs-number">2</span>, <span class="hljs-number">0</span>, <span class="hljs-number">1</span>, <span class="hljs-number">3</span>).contiguous().view(-<span class="hljs-number">1</span>, n_q, d_q)<br>        k = k.view(batch, n_k, n_head, d_k).permute(<span class="hljs-number">2</span>, <span class="hljs-number">0</span>, <span class="hljs-number">1</span>, <span class="hljs-number">3</span>).contiguous().view(-<span class="hljs-number">1</span>, n_k, d_k)<br>        v = v.view(batch, n_v, n_head, d_v).permute(<span class="hljs-number">2</span>, <span class="hljs-number">0</span>, <span class="hljs-number">1</span>, <span class="hljs-number">3</span>).contiguous().view(-<span class="hljs-number">1</span>, n_v, d_v)<br>        <span class="hljs-comment"># q.view重构张量维度</span><br>        <span class="hljs-comment"># torch.permute维度换位, permute(2,0,1,3)-&gt;(n_head, batch, n_q, d_q)</span><br>        <span class="hljs-comment"># contiguous: 返回一个在内存中连续的Tensor</span><br>        <br> <br>        <span class="hljs-keyword">if</span> mask <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:<br>            mask = mask.repeat(n_head, <span class="hljs-number">1</span>, <span class="hljs-number">1</span>) <span class="hljs-comment"># -&gt; mask.size()=(batch*n_head,n_q, n_k)</span><br>        attn, output = self.attention(q, k, v, mask=mask) <span class="hljs-comment"># 2.当成单头注意力求输出</span><br> <br>        output = output.view(n_head, batch, n_q, d_v).permute(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">0</span>, <span class="hljs-number">3</span>).contiguous().view(batch, n_q, -<span class="hljs-number">1</span>) <span class="hljs-comment"># 3.Concat</span><br>        output = self.fc_o(output) <span class="hljs-comment"># 4.仿射变换得到最终输出</span><br>        <span class="hljs-comment"># permute(1,2,0,3)-&gt; (batch, n_q,n_head,d_v)</span><br> <br>        <span class="hljs-keyword">return</span> attn, output<br> <br> <br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&quot;__main__&quot;</span>:<br>    n_q, n_k, n_v = <span class="hljs-number">2</span>, <span class="hljs-number">4</span>, <span class="hljs-number">4</span><br>    d_q_, d_k_, d_v_ = <span class="hljs-number">128</span>, <span class="hljs-number">128</span>, <span class="hljs-number">64</span><br>    batch=<span class="hljs-number">4</span><br>    <br>    q = torch.randn(batch, n_q, d_q_)<br>    k = torch.randn(batch, n_k, d_k_)<br>    v = torch.randn(batch, n_v, d_v_)    <br>    mask = torch.zeros(batch, n_q, n_k).<span class="hljs-built_in">bool</span>()<br> <br>    mha = MultiHeadAttention(n_head=<span class="hljs-number">8</span>, d_k_=<span class="hljs-number">128</span>, d_v_=<span class="hljs-number">64</span>, d_k=<span class="hljs-number">256</span>, d_v=<span class="hljs-number">128</span>, d_o=<span class="hljs-number">128</span>)<br>    attn, output = mha(q, k, v, mask=mask)<br> <br>    <span class="hljs-built_in">print</span>(attn.size())<br>    <span class="hljs-built_in">print</span>(output.size())<br></code></pre></td></tr></table></figure>
+<h2 id="3-自注意力机制"><a href="#3-自注意力机制" class="headerlink" title="3.自注意力机制"></a>3.自注意力机制</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">class</span> <span class="hljs-title class_">SelfAttention</span>(nn.Module):<br>    <span class="hljs-string">&quot;&quot;&quot; Self-Attention &quot;&quot;&quot;</span><br> <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, n_head, d_k, d_v, d_x, d_o</span>):<br>        self.wq = nn.Parameter(torch.Tensor(d_x, d_k))<br>        self.wk = nn.Parameter(torch.Tensor(d_x, d_k))<br>        self.wv = nn.Parameter(torch.Tensor(d_x, d_v))<br> <br>        self.mha = MultiHeadAttention(n_head=n_head, d_k_=d_k, d_v_=d_v, d_k=d_k, d_v=d_v, d_o=d_o)<br> <br>        self.init_parameters()<br> <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">init_parameters</span>(<span class="hljs-params">self</span>):<br>        <span class="hljs-keyword">for</span> param <span class="hljs-keyword">in</span> self.parameters():<br>            stdv = <span class="hljs-number">1.</span> / np.power(param.size(-<span class="hljs-number">1</span>), <span class="hljs-number">0.5</span>)<br>            param.data.uniform_(-stdv, stdv)<br> <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">forward</span>(<span class="hljs-params">self, x, mask=<span class="hljs-literal">None</span></span>):<br>        q = torch.matmul(x, self.wq)   <br>        k = torch.matmul(x, self.wk)<br>        v = torch.matmul(x, self.wv)<br> <br>        attn, output = self.mha(q, k, v, mask=mask)<br> <br>        <span class="hljs-keyword">return</span> attn, output<br> <br> <br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&quot;__main__&quot;</span>:<br>    n_x = <span class="hljs-number">4</span><br>    d_x = <span class="hljs-number">80</span><br> <br>    x = torch.randn(batch, n_x, d_x)<br>    mask = torch.zeros(batch, n_x, n_x).<span class="hljs-built_in">bool</span>()<br> <br>    selfattn = SelfAttention(n_head=<span class="hljs-number">8</span>, d_k=<span class="hljs-number">128</span>, d_v=<span class="hljs-number">64</span>, d_x=<span class="hljs-number">80</span>, d_o=<span class="hljs-number">80</span>)<br>    attn, output = selfattn(x, mask=mask)<br> <br>    <span class="hljs-built_in">print</span>(attn.size())<br>    <span class="hljs-built_in">print</span>(output.size())<br>    <br></code></pre></td></tr></table></figure>
+<h2 id="4-位置编码"><a href="#4-位置编码" class="headerlink" title="4.位置编码"></a>4.位置编码</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">positional_encoding</span>(<span class="hljs-params">max_position, d_model, min_freq=<span class="hljs-number">1e-4</span></span>):<br>    position = np.arange(max_position)<br>    freqs = min_freq**(<span class="hljs-number">2</span>*(np.arange(d_model)//<span class="hljs-number">2</span>)/d_model)<br>    pos_enc = position.reshape(-<span class="hljs-number">1</span>,<span class="hljs-number">1</span>)*freqs.reshape(<span class="hljs-number">1</span>,-<span class="hljs-number">1</span>)<br>    pos_enc[:, ::<span class="hljs-number">2</span>] = np.cos(pos_enc[:, ::<span class="hljs-number">2</span>])<br>    pos_enc[:, <span class="hljs-number">1</span>::<span class="hljs-number">2</span>] = np.sin(pos_enc[:, <span class="hljs-number">1</span>::<span class="hljs-number">2</span>])<br>    <span class="hljs-keyword">return</span> pos_enc<br>    <br><span class="hljs-comment">### Plotting ####</span><br>d_model = <span class="hljs-number">128</span><br>max_pos = <span class="hljs-number">256</span><br>mat = positional_encoding(max_pos, d_model)<br>plt.pcolormesh(mat, cmap=<span class="hljs-string">&#x27;copper&#x27;</span>)<br>plt.xlabel(<span class="hljs-string">&#x27;Depth&#x27;</span>)<br>plt.xlim((<span class="hljs-number">0</span>, d_model))<br>plt.ylabel(<span class="hljs-string">&#x27;Position&#x27;</span>)<br>plt.title(<span class="hljs-string">&quot;PE matrix heat map&quot;</span>)<br>plt.colorbar()<br>plt.show()<br></code></pre></td></tr></table></figure>
+<h2 id="参考："><a href="#参考：" class="headerlink" title="参考："></a>参考：</h2><p><a target="_blank" rel="noopener" href="https://www.cnblogs.com/chuqianyu/p/18048501">https://www.cnblogs.com/chuqianyu/p/18048501</a></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/zh-hans/categories/pytorch/" class="category-chain-item">pytorch</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/zh-hans/tags/pytorch/" class="print-no-link">#pytorch</a>
+      
+        <a href="/zh-hans/tags/coding/" class="print-no-link">#coding</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>pytorch面试题：实现attention结构</div>
+      <div>https://kangkang37.github.io/zh-hans/2024/07/05/pytorch01_attn/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>kq</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年7月5日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/zh-hans/2024/07/05/attention/" title="详细理解attention的原理">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">详细理解attention的原理</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/zh-hans/2024/07/05/positional_encoding/" title="位置编码的原理详解">
+                        <span class="hidden-mobile">位置编码的原理详解</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="" ><span>Kangkang</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/kangkang37" target="_blank" rel="nofollow noopener"><span>GitHub</span></a>     
+    </div>
+  
+  
+    <div class="statistics">
+  
+  
+
+  
+    
+      <span id="leancloud-site-pv-container" style="display: none">
+        点击量: 
+        <span id="leancloud-site-pv"></span>
+         ,
+      </span>
+    
+    
+      <span id="leancloud-site-uv-container" style="display: none">
+        访问人数: 
+        <span id="leancloud-site-uv"></span>
+         
+      </span>
+    
+    
+
+  
+</div>
+
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/zh-hans/js/events.js" ></script>
+<script  src="/zh-hans/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/zh-hans/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            loader : {
+              load: ['ui/lazy']
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.2/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/zh-hans/js/leancloud.js" ></script>
+
+  <script  src="/zh-hans/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/zh-hans/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>

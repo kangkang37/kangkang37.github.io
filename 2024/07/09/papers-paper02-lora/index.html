@@ -1,0 +1,903 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/zh-hans/img/fluid.png">
+  <link rel="icon" href="/zh-hans/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="kq">
+  <meta name="keywords" content="hexo, blog, ai, artificial intelligence">
+  
+    <meta name="description" content="LoRA论文精读我们详细看看这篇论文：Low-Rank Adaptation of Large Language Models 这篇论文是2021年十月由Microsoft发表的。 Abstract自然语言处理的重要范式包括在通用领域数据上进行大规模预训练，并适应特定任务或领域。随着我们预训练更大的模型，全量微调（重新训练所有模型参数）变得越来越不可行。以GPT-3 175B为例——部署每个具有1">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LoRA论文精读">
+<meta property="og:url" content="https://kangkang37.github.io/zh-hans/2024/07/09/papers-paper02-lora/index.html">
+<meta property="og:site_name" content="KQ&#39;s AI Blog">
+<meta property="og:description" content="LoRA论文精读我们详细看看这篇论文：Low-Rank Adaptation of Large Language Models 这篇论文是2021年十月由Microsoft发表的。 Abstract自然语言处理的重要范式包括在通用领域数据上进行大规模预训练，并适应特定任务或领域。随着我们预训练更大的模型，全量微调（重新训练所有模型参数）变得越来越不可行。以GPT-3 175B为例——部署每个具有1">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/09/papers-paper02-lora/lora01.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/09/papers-paper02-lora/lora02.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/09/papers-paper02-lora/lora03.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/09/papers-paper02-lora/lora03.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/09/papers-paper02-lora/lora05.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/09/papers-paper02-lora/lora06.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/09/papers-paper02-lora/lora07.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/09/papers-paper02-lora/lora08.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/09/papers-paper02-lora/lora09.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/09/papers-paper02-lora/lora10.png">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/09/papers-paper02-lora/lora11.png">
+<meta property="article:published_time" content="2024-07-10T03:34:05.000Z">
+<meta property="article:modified_time" content="2024-07-10T05:17:55.885Z">
+<meta property="article:author" content="kq">
+<meta property="article:tag" content="论文精读">
+<meta property="article:tag" content="LoRA">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://kangkang37.github.io/zh-hans/2024/07/09/papers-paper02-lora/lora01.png">
+  
+  
+  
+  <title>LoRA论文精读 - KQ&#39;s AI Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/zh-hans/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/zh-hans/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/zh-hans/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"kangkang37.github.io","root":"/zh-hans/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Oy95QsXXN5Dq2RLD8evjzYEP-MdYXbMMI","app_key":"g2P9HRXegX1XhaV3or2pH3zk","server_url":null,"path":"window.location.pathname","ignore_local":true}},"search_path":"/zh-hans/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/zh-hans/js/utils.js" ></script>
+  <script  src="/zh-hans/js/color-schema.js" ></script>
+  
+
+  
+
+  
+    <!-- Google tag (gtag.js) -->
+    <script async>
+      if (!Fluid.ctx.dnt) {
+        Fluid.utils.createScript("https://www.googletagmanager.com/gtag/js?id=", function() {
+          window.dataLayer = window.dataLayer || [];
+          function gtag() {
+            dataLayer.push(arguments);
+          }
+          gtag('js', new Date());
+          gtag('config', '');
+        });
+      }
+    </script>
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<script src="/zh-hans/js/hexo_resize_image.js"></script> 
+<!-- ## -->
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/zh-hans/">
+      <strong>KQ&#39;s AI Blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="https://kangkang37.github.io" target="_self">
+                <i class="iconfont icon-language"></i>
+                <span>language</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/zh-hans/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="LoRA论文精读"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        kq
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-07-09 20:34" pubdate>
+          2024年7月9日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          75 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="leancloud-page-views"></span> 次
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">LoRA论文精读</h1>
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    本文最后更新于 2024年7月9日晚上10点17分
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="LoRA论文精读"><a href="#LoRA论文精读" class="headerlink" title="LoRA论文精读"></a>LoRA论文精读</h1><p>我们详细看看这篇论文：<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2106.09685">Low-Rank Adaptation of Large Language Models</a></p>
+<p>这篇论文是2021年十月由Microsoft发表的。</p>
+<h2 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h2><p>自然语言处理的重要范式包括在通用领域数据上进行大规模预训练，并适应特定任务或领域。随着我们预训练更大的模型，全量微调（重新训练所有模型参数）变得越来越不可行。以GPT-3 175B为例——部署每个具有175B参数的独立微调模型实例成本高昂。我们提出了低秩适应（Low-Rank Adaptation，简称LoRA），该方法冻结预训练模型的权重，并在Transformer架构的每一层中注入可训练的秩分解矩阵，从而大大减少下游任务的可训练参数数量。与使用Adam进行微调的GPT-3 175B相比，LoRA可以减少可训练参数数量达10,000倍，并将GPU内存需求减少3倍。尽管LoRA的可训练参数更少，但在RoBERTa、DeBERTa、GPT-2和GPT-3上的模型质量与微调相当或更好，同时具有更高的训练吞吐量，并且不像适配器那样没有额外的推理延迟。我们还提供了一项关于语言模型适应中秩缺乏的实证研究，这揭示了LoRA的有效性。我们发布了一个包，便于将LoRA集成到PyTorch模型中，并在<a target="_blank" rel="noopener" href="https://github.com/microsoft/LoRA">github-lora</a>提供了我们的实现和RoBERTa、DeBERTa和GPT-2的模型检查点。</p>
+<h2 id="1-Introduction"><a href="#1-Introduction" class="headerlink" title="1 Introduction"></a>1 Introduction</h2><p><img src="/zh-hans/2024/07/09/papers-paper02-lora/lora01.png" srcset="/zh-hans/img/loading.gif" lazyload alt="图1: 我们的重新参数化，只训练A和B"><br>自然语言处理的许多应用依赖于将一个大规模的预训练语言模型适应于多个下游应用。这样的适应通常通过微调来完成，这会更新预训练模型的所有参数。微调的主要缺点是新模型包含的参数数量与原始模型一样多。随着每隔几个月就训练出更大的模型，这从对GPT-2（Radford等）或RoBERTa large（Liu等，2019）来说的一个“小不便”变成了对拥有1750亿可训练参数的GPT-3（Brown等，2020）来说的一个关键部署挑战。</p>
+<p>许多人试图通过只适应部分参数或为新任务学习外部模块来缓解这个问题。通过这种方式，我们只需要在预训练模型的基础上为每个任务存储和加载少量任务特定的参数，从而大大提高部署时的运行效率。然而，现有技术通常通过增加模型深度引入推理延迟（Houlsby等，2019；Rebuffi等，2017）或减少模型的可用序列长度（Li &amp; Liang，2021；Lester等，2021；Hambardzumyan等，2020；Liu等，2021）（第3节）。更重要的是，这些方法往往无法达到微调基线的性能，在效率和模型质量之间形成权衡。</p>
+<p>我们受到Li等（2018a）和Aghajanyan等（2020）的启发，这些研究表明，学习到的过参数化模型实际上位于一个低内在维度上。我们假设在模型适应过程中权重的变化也具有低“内在秩”，这引导我们提出了低秩适应（LoRA）方法。LoRA允许我们通过优化适应过程中密集层变化的秩分解矩阵来间接训练神经网络中的一些密集层，同时保持预训练权重不变，如图1所示。以GPT-3 175B为例，我们展示了即使在全秩（即图1中的d）高达12,288时，一个非常低的秩（即图1中的r可以是1或2）也足够，使得LoRA在存储和计算上都很高效。</p>
+<p>LoRA具有几个关键优势：</p>
+<ul>
+<li><strong>共享预训练模型</strong>：一个预训练模型可以用于构建许多针对不同任务的小型LoRA模块。我们可以冻结共享模型，并通过替换图1中的矩阵A和B来高效地切换任务，从而显著减少存储需求和任务切换的开销。</li>
+<li><strong>提高训练效率</strong>：使用自适应优化器时，LoRA使训练更加高效，并将硬件门槛降低多达3倍，因为我们不需要计算大多数参数的梯度或维护优化器状态。相反，我们只优化注入的、更小的低秩矩阵。</li>
+<li><strong>无推理延迟</strong>：我们的简单线性设计允许在部署时将可训练矩阵与冻结的权重合并，与完全微调模型相比，不引入任何推理延迟。</li>
+<li><strong>方法兼容性</strong>：LoRA与许多现有方法是正交的，可以与许多方法结合使用，例如前缀调优。我们在附录E中提供了一个示例。</li>
+</ul>
+<p><strong>术语和惯例</strong><br>我们频繁引用Transformer架构，并使用其维度的常规术语。我们将Transformer层的输入和输出维度大小称为 $d_{\text{model}}$。我们使用$W_q$、$W_k$、$W_v$和$W_o$来指代自注意力模块中的查询、键、值和输出投影矩阵。$W$或$W_0$指预训练权重矩阵，$ \Delta W$是适应过程中累积的梯度更新。我们用$r$表示LoRA模块的秩。我们遵循（Vaswani等，2017；Brown等，2020）提出的惯例，使用Adam（Loshchilov &amp; Hutter, 2019；Kingma &amp; Ba, 2017）进行模型优化，并使用Transformer MLP前馈维度 $d_{\text{ffn}} = 4 \times d_{\text{model}}$。</p>
+<h2 id="2-Problem-Statement"><a href="#2-Problem-Statement" class="headerlink" title="2 Problem Statement"></a>2 Problem Statement</h2><p>虽然我们的提议与训练目标无关，但我们专注于语言建模作为我们的动机用例。以下是语言建模问题的简要描述，特别是给定任务特定提示时条件概率的最大化。</p>
+<p>假设我们有一个由参数$\Phi$表示的预训练自回归语言模型 $P_\Phi(y|x)$。例如，$P_\Phi(y|x)$ 可以是基于Transformer架构（Vaswani等，2017）的通用多任务学习器，如GPT（Radford等，b；Brown等，2020）。考虑将这个预训练模型适应于下游条件文本生成任务，例如摘要、机器阅读理解（MRC）和自然语言到SQL（NL2SQL）。每个下游任务由上下文-目标对的训练数据集表示：$Z = \{(x_i, y_i)\}_{i=1,..,N}$，其中 $x_i$ 和 $y_i$ 都是令牌序列。例如，在NL2SQL中，$x_i$ 是自然语言查询，$y_i$ 是其对应的SQL命令；对于摘要生成，$x_i$ 是文章内容，$y_i$ 是其摘要。</p>
+<p>在全量微调过程中，模型被初始化为预训练权重 $\Phi_0$ 并通过反复沿着梯度更新为 $\Phi_0 + \Delta\Phi$ 来最大化条件语言建模目标：</p>
+<script type="math/tex; mode=display">
+max_{\Phi} \sum_{(x,y) \in Z} \sum_{t=1}^{|y|} \log (P_{\Phi}(y_t | x, y_{ < t}))</script><p>全量微调的主要缺点之一是，对于每个下游任务，我们学习一组不同的参数 $\Delta\Phi$，其维度 $|\Delta\Phi|$ 等于 $|\Phi_0|$。因此，如果预训练模型很大（例如GPT-3，其 $|\Phi_0| \approx 175 十亿），存储和部署许多独立的微调模型实例可能会非常具有挑战性，甚至难以实现。</p>
+<p>在本文中，我们采用了一种更高效的参数方法，其中任务特定的参数增量 $\Delta\Phi = \Delta\Phi(\Theta)$ 由一组更小的参数 $\Theta$ 编码，其维度 $|\Theta| \ll |\Phi_0|$。因此，寻找 $\Delta\Phi$ 的任务变成了对 $\Theta$ 进行优化：</p>
+<script type="math/tex; mode=display">
+max_{\Theta} \sum_{(x,y) \in Z} \sum_{t=1}^{|y|} \log (P_{\Phi_{0} + \Delta \Theta (\Phi)}(y_t | x, y_{ < t}))</script><p>在随后的章节中，我们提出使用低秩表示(low-rank representation)来编码 $\Delta\Phi$，这在计算和内存方面都很高效。当预训练模型为 GPT-3 175B 时，可训练参数 $|\Theta|$ 可以小到 $|\Phi_0|$ 的 0.01%。</p>
+<h2 id="3-Aren’t-Existing-Solutions-Good-Enough"><a href="#3-Aren’t-Existing-Solutions-Good-Enough" class="headerlink" title="3 Aren’t Existing Solutions Good Enough?"></a>3 Aren’t Existing Solutions Good Enough?</h2><p>我们要解决的问题并不新颖。自迁移学习诞生以来，已经有几十项工作致力于使模型适应更高效的参数和计算。请参见第6节了解一些著名的工作。以语言建模为例，在高效适应方面有两种突出的策略：添加适配器层(adapter layers)（Houlsby等，2019；Rebuffi等，2017；Pfeiffer等，2021；Rücklé等，2020）或优化某种形式的输入层激活（Li &amp; Liang，2021；Lester等，2021；Hambardzumyan等，2020；Liu等，2021）。然而，这两种策略都有其局限性，特别是在大规模和对延迟敏感的生产场景中。</p>
+<p><strong>适配器层引入推理延迟</strong></p>
+<p>适配器(Adapter)有许多变体。我们关注的是Houlsby等（2019）设计的每个Transformer块有两个适配器层的原始设计，以及Lin等（2020）设计的每个块只有一个适配器层但有额外LayerNorm（Ba等，2016）的新设计。虽然可以通过修剪层或利用多任务设置（Rücklé等，2020；Pfeiffer等，2021）来减少整体延迟，但没有直接的方法绕过适配器层中的额外计算。这似乎不是一个问题，因为适配器层设计成具有较少的参数（有时&lt;1% 的原始模型），通过有一个小瓶颈维度来限制它们可以添加的FLOPs。然而，大型神经网络依赖于硬件并行性来保持低延迟，而适配器层必须顺序处理。这在批量大小通常只有一个的在线推理设置中有所不同。在没有模型并行性的通用场景中，例如在单个GPU上运行GPT-2（Radford等）中型模型的推理时，即使使用非常小的瓶颈维度（表1），我们也会看到延迟显著增加。</p>
+<p>当我们需要像Shoeybi等（2020）和Lepikhin等（2020）那样对模型进行分片时，这个问题会变得更糟，因为额外的深度需要更多的同步GPU操作，如AllReduce和Broadcast，除非我们将适配器参数冗余存储多次。</p>
+<p><strong>直接优化提示是困难的</strong></p>
+<p>另一个方向，如前缀调优（Li &amp; Liang，2021）所示，面临不同的挑战。我们观察到前缀调优难以优化，其性能在可训练参数中非单调变化，验证了原始论文中的类似观察。从根本上说，保留部分序列长度进行适应必然会减少可用于处理下游任务的序列长度，我们怀疑这使得调优提示的性能不如其他方法。我们将任务性能的研究推迟到第5节。</p>
+<p><img src="/zh-hans/2024/07/09/papers-paper02-lora/lora02.png" srcset="/zh-hans/img/loading.gif" lazyload alt="表1：在GPT-2 medium中一次前向传递的推理延迟，单位为毫秒，取100次试验的平均值。我们使用NVIDIA Quadro RTX8000。“|Θ|”表示适配器层中的可训练参数数量。AdapterL和AdapterH是两种适配器调优的变体，我们在第5.1节中描述。在在线、短序列长度的场景中，适配器层引入的推理延迟可能是显著的。完整的研究见附录B."></p>
+<h2 id="4-Our-Method"><a href="#4-Our-Method" class="headerlink" title="4 Our Method"></a>4 Our Method</h2><p>我们描述了LoRA的简单设计及其实际收益。这里概述的原则适用于深度学习模型中的任何密集层，尽管我们在实验中仅专注于Transformer语言模型中的某些权重，作为激励用例。</p>
+<h3 id="4-1-Low-Rank-Parameterized-Update-Matrices"><a href="#4-1-Low-Rank-Parameterized-Update-Matrices" class="headerlink" title="4.1 Low-Rank-Parameterized Update Matrices"></a>4.1 Low-Rank-Parameterized Update Matrices</h3><p>一个神经网络包含许多执行矩阵乘法的密集层。这些层中的权重矩阵通常具有全秩(full-rank)。Aghajanyan等（2020）表明，当适应特定任务时，预训练语言模型具有低“内在维度”，即使随机投影到较小的子空间中仍然可以有效学习。受此启发，我们假设在适应过程中权重的更新也具有低“内在秩”。对于预训练权重矩阵 $W_0 \in \mathbb{R}^{d \times k}$，我们通过表示其更新为低秩分解 $W_0 + \Delta W = W_0 + BA$ 来约束其更新，其中 $B \in \mathbb{R}^{d \times r}$、$A \in \mathbb{R}^{r \times k}$，且秩 $r \ll \min(d, k)$。在训练过程中，$W_0$ 是冻结的，不接收梯度更新，而 $A$ 和 $B$ 包含可训练参数。注意，$W_0$ 和 $\Delta W = BA$ 都与相同的输入相乘，它们各自的输出向量按坐标相加。对于 $h = W_0 x$，我们修改后的前向传递得到：</p>
+<script type="math/tex; mode=display">
+h = W_0 x + \Delta W x = W_0 x + BA x</script><p>我们在图1中展示了我们的重新参数化。我们使用随机高斯初始化 $A$ 并将 $B$ 初始化为零，因此 $\Delta W = BA$ 在训练开始时为零。然后我们将 $\Delta W x$ 乘以 $\alpha / r$，其中 $\alpha$ 是 $r$ 中的一个常数。当使用Adam优化时，如果我们适当地缩放初始化，调整 $\alpha$ 大致相当于调整学习率。因此，我们简单地将 $\alpha$ 设置为我们尝试的第一个 $r$ 并且不调整它。这种缩放有助于减少在改变 $r$ 时重新调整超参数的需求（Yang &amp; Hu，2021）。</p>
+<p><strong>全量微调的推广形式</strong>。更一般的微调形式允许训练预训练参数的子集。LoRA更进一步，不要求在适应过程中对权重矩阵的累积梯度更新具有全秩。这意味着，当将LoRA应用于所有权重矩阵并训练所有偏置时，通过将LoRA的秩 $r$ 设置为预训练权重矩阵的秩，我们大致可以恢复全量微调的表达能力。换句话说，随着可训练参数数量的增加，训练LoRA大致收敛于训练原始模型，而基于适配器的方法收敛于一个MLP，基于前缀的方法则收敛于无法处理长输入序列的模型。</p>
+<p><strong>无额外推理延迟</strong>。在生产环境中部署时，我们可以显式计算并存储 $W = W_0 + BA$，并像往常一样进行推理。注意，$W_0$ 和 $BA$ 都在 $\mathbb{R}^{d \times k}$ 中。当我们需要切换到另一个下游任务时，可以通过减去 $BA$ 并添加不同的 $B’A’$ 来恢复 $W_0$，这是一个非常快速的操作，几乎没有内存开销。关键是，这保证了与构建微调模型相比，我们在推理过程中不会引入任何额外的延迟。</p>
+<h3 id="4-2-Applying-LoRA-to-Transformer"><a href="#4-2-Applying-LoRA-to-Transformer" class="headerlink" title="4.2 Applying LoRA to Transformer"></a>4.2 Applying LoRA to Transformer</h3><p>原则上，我们可以将LoRA应用于神经网络中任意子集的权重矩阵，以减少可训练参数的数量。在Transformer架构中，自注意力模块有四个权重矩阵（$W_q$、$W_k$、$W_v$、$W_o$）和MLP模块中有两个权重矩阵。尽管输出维度通常被切片为注意力头，我们将 $W_q$（或 $W_k$、$W_v$）视为维度为 $d_{\text{model}} \times d_{\text{model}}$ 的单个矩阵。为了简化和提高参数效率，我们仅限于适应下游任务的注意力权重，并冻结MLP模块（因此在下游任务中不训练它们）。我们在第7.1节进一步研究了适应Transformer中不同类型注意力权重矩阵的效果。我们将MLP层、LayerNorm层和偏置适应的实证研究留待未来工作。</p>
+<p><strong>实际收益和限制</strong></p>
+<p>最显著的好处来自内存和存储使用量的减少。对于使用Adam训练的大型Transformer，如果 $r \ll d_{\text{model}}$，由于不需要存储冻结参数的优化器状态，我们将VRAM使用量减少了多达2/3。在GPT-3 175B上，我们将训练期间的VRAM消耗从1.2TB减少到350GB。使用 $r = 4$ 并且仅适应查询和值投影矩阵时，检查点大小减少了约10,000倍（从350GB到35MB）4。这使我们可以使用显著更少的GPU进行训练并避免I/O瓶颈。另一个好处是，在部署时仅通过交换LoRA权重而不是所有参数，可以以更低的成本在任务之间切换。这使我们能够创建许多定制模型，并能在存储预训练权重的机器上即时切换。我们还观察到，在GPT-3 175B上，与全量微调相比，训练速度提高了25%5，因为我们不需要计算绝大多数参数的梯度。</p>
+<p>LoRA也有其局限性。例如，如果选择将 $A$ 和 $B$ 吸收进 $W$ 以消除额外的推理延迟，那么在单次前向传递中批处理具有不同 $A$ 和 $B$ 的任务输入并不简单。尽管在延迟不关键的情况下，仍然可以不合并权重，并动态选择批处理中的LoRA模块。</p>
+<h2 id="5-Empirical-Experiments"><a href="#5-Empirical-Experiments" class="headerlink" title="5 Empirical Experiments"></a>5 Empirical Experiments</h2><p>我们在RoBERTa（Liu等，2019）、DeBERTa（He等，2021）和GPT-2（Radford等，b）上评估了LoRA在下游任务中的表现，然后扩展到GPT-3 175B（Brown等，2020）。我们的实验涵盖了从自然语言理解（NLU）到生成（NLG）的广泛任务。具体来说，我们在RoBERTa和DeBERTa上评估了GLUE（Wang等，2019）基准。我们遵循Li &amp; Liang（2021）的GPT-2设置进行直接比较，并为GPT-3的大规模实验添加了WikiSQL（Zhong等，2017）（自然语言到SQL查询）和SAMSum（Gliwa等，2019）（对话摘要）。有关我们使用的数据集的更多详细信息，请参见附录C。我们在所有实验中使用NVIDIA Tesla V100。</p>
+<h3 id="5-1-Baselines"><a href="#5-1-Baselines" class="headerlink" title="5.1 Baselines"></a>5.1 Baselines</h3><p>为了广泛地与其他基线进行比较，我们复制了先前工作的设置，并尽可能重复使用他们报告的数字。然而，这意味着某些基线可能仅出现在某些实验中。</p>
+<p><strong>微调（Fine-Tuning, FT）</strong> 是一种常见的适应方法。在微调过程中，模型被初始化为预训练的权重和偏置，所有模型参数都经历梯度更新。一种简单的变体是仅更新某些层，同时冻结其他层。我们包括了一种在先前工作（Li &amp; Liang，2021）中报告的基线，它仅适应GPT-2的最后两层（FTTop2）。</p>
+<p><strong>仅训练偏置或BitFit</strong> 是一种基线方法，我们仅训练偏置向量，同时冻结其他所有参数。这个基线最近也被BitFit（Zaken等，2021）研究。</p>
+<p><strong>前缀嵌入调优（PreEmbed）</strong> 在输入令牌之间插入特殊令牌。这些特殊令牌具有可训练的词嵌入，通常不在模型的词汇表中。放置这些令牌的位置会影响性能。我们专注于“前缀化”，即将这些令牌添加到提示的开头，以及“中缀化”，即将这些令牌添加到提示的中间；这两者都在Li &amp; Liang（2021）中讨论。我们用 $l_p$（前缀令牌的数量）和 $l_i$（中缀令牌的数量）表示。可训练参数的数量为 $|\Theta| = d_{\text{model}} \times (l_p + l_i)$。</p>
+<p><strong>前缀层调优（PreLayer）</strong> 是前缀嵌入调优的扩展。我们不仅学习某些特殊令牌的词嵌入（或等效于嵌入层后的激活），还学习每个Transformer层后的激活。从前一层计算的激活简单地被可训练的激活替代。可训练参数的数量为 $|\Theta| = L \times d_{\text{model}} \times (l_p + l_i)$，其中 $L$ 是Transformer层的数量。</p>
+<p><strong>适配器调优（Adapter tuning）</strong>，如Houlsby等（2019）提出的，在自注意力模块（和MLP模块）与后续残差连接之间插入适配器层。在适配器层中，有两个带有偏置的全连接层，中间有一个非线性层。我们称这种原始设计为AdapterH。最近，Lin等（2020）提出了一种更高效的设计，将适配器层仅应用于MLP模块之后和LayerNorm之后。我们称之为AdapterL。这与Pfeiffer等（2021）提出的另一个设计非常相似，我们称之为AdapterP。我们还包括另一个基线，称为AdapterDrop（Rücklé等，2020），它通过丢弃一些适配器层来提高效率（AdapterD）。我们尽可能引用先前工作的数字，以最大限度地增加我们比较的基线数量；它们在第一列带有星号（*）的行中。在所有情况下，我们有 $|\Theta| = \hat{L}_{\text{Adpt}} \times (2 \times d_{\text{model}} \times r + r + d_{\text{model}}) + 2 \times \hat{L}_{\text{LN}} \times d_{\text{model}}$，其中 $\hat{L}_{\text{Adpt}}$ 是适配器层的数量，$\hat{L}_{\text{LN}}$ 是可训练的LayerNorm数量（例如，在AdapterL中）。</p>
+<p><strong>LoRA</strong> 在现有权重矩阵中并行添加可训练的秩分解矩阵对。如第4.2节所述，为了简化，我们在大多数实验中仅将LoRA应用于 $W_q$ 和 $W_v$。可训练参数的数量由秩 $r$ 和原始权重的形状决定：$|\Theta| = 2 \times \hat{L}_{\text{LoRA}} \times d_{\text{model}} \times r$，其中 $\hat{L}_{\text{LoRA}}$ 是我们应用LoRA的权重矩阵数量。</p>
+<p><img src="/zh-hans/2024/07/09/papers-paper02-lora/lora03.png" srcset="/zh-hans/img/loading.gif" lazyload alt="表2：RoBERTa base、RoBERTa large 和 DeBERTa XXL 在GLUE基准测试中使用不同适应方法的表现。我们报告了MNLI的整体（匹配和不匹配）准确性、CoLA的Matthew’s相关系数、STS-B的Pearson相关系数，以及其他任务的准确性。所有指标数值越高越好。* 表示先前工作中发布的数字。† 表示按照Houlsby等（2019）类似设置进行的运行以进行公平比较。"></p>
+<h3 id="5-2-RoBERTa-Base-Large"><a href="#5-2-RoBERTa-Base-Large" class="headerlink" title="5.2 RoBERTa Base/Large"></a>5.2 RoBERTa Base/Large</h3><p>RoBERTa（Liu等，2019）优化了BERT（Devlin等，2019a）最初提出的预训练配方，并在没有引入更多可训练参数的情况下提升了后者的任务性能。尽管RoBERTa近年来在GLUE基准测试（Wang等，2019）等NLP排行榜上被更大的模型超越，但它在从业者中仍然是一个竞争力强且受欢迎的预训练模型。我们从HuggingFace Transformers库（Wolf等，2020）中获取预训练的RoBERTa base（125M）和RoBERTa large（355M），并评估不同高效适应方法在GLUE基准任务上的表现。我们还根据Houlsby等（2019）和Pfeiffer等（2021）的设置进行复现。为了确保公平比较，在与适配器进行比较时，我们对LoRA的评估做了两个重要的改变。首先，我们对所有任务使用相同的批量大小，并使用128的序列长度以匹配适配器基线。其次，我们在MRPC、RTE和STS-B任务中将模型初始化为预训练模型，而不是像微调基线那样初始化为已经适应MNLI的模型。遵循Houlsby等（2019）更严格设置的运行标记为†。结果如表2（前三部分）所示。有关使用的超参数的详细信息，请参见第D.1节。</p>
+<h3 id="5-3-DeBERTa-XXL"><a href="#5-3-DeBERTa-XXL" class="headerlink" title="5.3 DeBERTa XXL"></a>5.3 DeBERTa XXL</h3><p>DeBERTa（He等，2021）是BERT的一个更新变体，经过大规模训练，在GLUE（Wang等，2019）和SuperGLUE（Wang等，2020）等基准测试中表现非常出色。我们评估了LoRA是否仍能在GLUE上匹敌完全微调的DeBERTa XXL（1.5B）的性能。结果如表2（底部部分）所示。有关使用的超参数的详细信息，请参见第D.2节。</p>
+<p><img src="/zh-hans/2024/07/09/papers-paper02-lora/lora03.png" srcset="/zh-hans/img/loading.gif" lazyload alt="表3：在E2E NLG挑战赛中使用不同适应方法的GPT-2 medium (M) 和 large (L)。对于所有指标，数值越高越好。LoRA在可比较或更少的可训练参数下优于多个基线。我们运行的实验显示了置信区间。*表示先前工作中发布的数字。"></p>
+<h3 id="5-4-GPT-2-Medium-Large"><a href="#5-4-GPT-2-Medium-Large" class="headerlink" title="5.4 GPT-2 Medium/Large"></a>5.4 GPT-2 Medium/Large</h3><p>在展示了LoRA在NLU任务上可以作为全量微调的有力替代方案后，我们希望回答LoRA在NLG模型（如GPT-2 medium和large（Radford等，b））上是否仍然表现出色。为了进行直接比较，我们的设置尽可能接近Li &amp; Liang（2021）。由于篇幅限制，本节仅展示我们在E2E NLG挑战赛上的结果（表3）。WebNLG（Gardent等，2017）和DART（Nan等，2020）的结果见第F.1节。我们在第D.3节列出了使用的超参数。</p>
+<p><img src="/zh-hans/2024/07/09/papers-paper02-lora/lora05.png" srcset="/zh-hans/img/loading.gif" lazyload alt="表4：不同适应方法在GPT-3 175B上的表现。我们报告了WikiSQL的逻辑形式验证准确性、MultiNLI-matched的验证准确性，以及SAMSum上的Rouge-1/2/L。LoRA的表现优于之前的方法，包括全量微调。WikiSQL的结果波动在±0.5%左右，MNLI-m在±0.1%左右，SAMSum的三个指标分别在±0.2/±0.2/±0.1%左右。"></p>
+<h3 id="5-5-Scaling-Up-to-GPT-3-175B"><a href="#5-5-Scaling-Up-to-GPT-3-175B" class="headerlink" title="5.5 Scaling Up to GPT-3 175B"></a>5.5 Scaling Up to GPT-3 175B</h3><p>作为对LoRA的最终压力测试，我们扩展到具有1750亿参数的GPT-3。由于训练成本高，我们只报告给定任务在随机种子上的典型标准差，而不是为每个条目提供一个。有关使用的超参数的详细信息，请参见第D.4节。</p>
+<p>如表4所示，LoRA在所有三个数据集上匹配或超过了微调基线。请注意，并不是所有方法在拥有更多可训练参数时都会单调受益，如图2所示。当我们使用超过256个特殊令牌进行前缀嵌入调优或超过32个特殊令牌进行前缀层调优时，我们观察到性能显著下降。这与Li &amp; Liang（2021）中的类似观察结果相一致。虽然对这一现象的彻底调查超出了本文的范围，但我们怀疑更多的特殊令牌导致输入分布进一步偏离预训练数据分布。我们在第F.3节分别调查了不同适应方法在低数据环境中的表现。<br><img src="/zh-hans/2024/07/09/papers-paper02-lora/lora06.png" srcset="/zh-hans/img/loading.gif" lazyload alt="图2：在WikiSQL和MNLI-matched上的GPT-3 175B验证准确性与多种适应方法的可训练参数数量的关系。LoRA显示出更好的可扩展性和任务性能。有关绘制数据点的更多详细信息，请参见第F.2节。"></p>
+<h2 id="6-Related-Works"><a href="#6-Related-Works" class="headerlink" title="6 Related Works"></a>6 Related Works</h2><p><strong>Transformer语言模型</strong></p>
+<p>Transformer（Vaswani等，2017）是一种广泛使用自注意力机制的序列到序列架构。Radford等（a）将其应用于自回归语言建模，使用一堆Transformer解码器。从那时起，基于Transformer的语言模型在NLP中占据主导地位，在许多任务中达到了最先进的水平。BERT（Devlin等，2019b）和GPT-2（Radford等，b）的出现开创了一种新范式——这两个大型Transformer语言模型在大量文本上训练，在通用领域数据预训练后再在任务特定数据上进行微调，相比直接在任务特定数据上训练提供了显著的性能提升。训练更大的Transformer通常会带来更好的性能，这仍然是一个活跃的研究方向。GPT-3（Brown等，2020）是迄今为止训练的最大的单一Transformer语言模型，具有1750亿参数。</p>
+<p><strong>提示工程和微调</strong></p>
+<p>尽管GPT-3 175B可以通过少量额外的训练示例来适应其行为，但结果严重依赖于输入提示（Brown等，2020）。这需要一种经验性的提示编写和格式化的艺术，以最大化模型在期望任务上的性能，这被称为提示工程或提示黑客。微调则是将预训练在通用领域的模型重新训练以适应特定任务（Devlin等，2019b；Radford等，a）。其变体包括仅学习部分参数（Devlin等，2019b；Collobert &amp; Weston，2008），但从业者通常会重新训练所有参数以最大化下游性能。然而，由于GPT-3 175B生成的检查点庞大以及高硬件门槛，按通常方式进行微调具有挑战性，因为其内存占用与预训练相同。</p>
+<p><strong>参数高效适应</strong></p>
+<p>许多人提出在神经网络的现有层之间插入适配器层（Houlsby等，2019；Rebuffi等，2017；Lin等，2020）。我们的方法使用类似的瓶颈结构对权重更新施加低秩约束。关键的功能区别在于，我们学习的权重可以在推理过程中与主权重合并，从而不引入任何延迟，而适配器层则不具备这一点（第3节）。适配器的一个当代扩展是COMPACTER（Mahabadi等，2021），其本质上使用克罗内克产品和一些预定的权重共享方案对适配器层进行参数化。同样，将LoRA与其他基于张量积的方法结合可能会提高其参数效率，这留待未来工作中探索。最近，许多人提出优化输入词嵌入代替微调，类似于提示工程的连续可微推广（Li &amp; Liang，2021；Lester等，2021；Hambardzumyan等，2020；Liu等，2021）。我们在实验部分包括了与Li &amp; Liang（2021）的比较。然而，这些工作只能通过在提示中使用更多的特殊令牌来扩展，而这些特殊令牌在学习位置嵌入时会占用可用的序列长度。</p>
+<p><strong>深度学习中的低秩结构</strong></p>
+<p>低秩结构在机器学习中非常常见。许多机器学习问题具有某种内在的低秩结构（Li等，2016；Cai等，2010；Li等，2018b；Grasedyck等，2013）。此外，众所周知，对于许多深度学习任务，尤其是那些具有严重过参数化的神经网络，学习到的神经网络在训练后会具有低秩性质（Oymak等，2019）。一些先前的工作甚至在训练原始神经网络时显式施加低秩约束（Sainath等，2013；Povey等，2018；Zhang等，2014；Jaderberg等，2014；Zhao等，2016；Khodak等，2021；Denil等，2014）；然而，据我们所知，这些工作中没有考虑到对冻结模型进行低秩更新以适应下游任务。在理论文献中，众所周知，当底层概念类具有某种低秩结构时，神经网络的性能优于其他经典学习方法，包括相应的（有限宽度）神经切线核（Allen-Zhu等，2019；Li &amp; Liang，2018）（Ghorbani等，2020；Allen-Zhu &amp; Li，2019；Allen-Zhu &amp; Li，2020a）。Allen-Zhu &amp; Li（2020b）的另一个理论结果表明，低秩适应在对抗性训练中可能有用。总之，我们认为，我们提出的低秩适应更新在文献中有充分的动机。</p>
+<h2 id="7-Understanding-the-Low-Rank-updates"><a href="#7-Understanding-the-Low-Rank-updates" class="headerlink" title="7 Understanding the Low-Rank updates"></a>7 Understanding the Low-Rank updates</h2><p>鉴于LoRA的实证优势，我们希望进一步解释从下游任务中学习到的低秩适应的特性。请注意，低秩结构不仅降低了硬件门槛，使我们能够并行运行多个实验，还提供了更好的解释性，说明更新权重如何与预训练权重相关联。我们将研究重点放在GPT-3 175B上，在这里我们实现了最大程度的可训练参数减少（高达10,000倍），而不影响任务性能。</p>
+<p>我们进行了一系列实证研究，以回答以下问题：</p>
+<ol>
+<li>在参数预算约束下，预训练Transformer中的哪些权重矩阵子集应该适应以最大化下游性能？</li>
+<li>“最佳”适应矩阵 $\Delta W$ 是否真的秩不足？如果是，实践中使用的最佳秩是多少？</li>
+<li>$\Delta W$ 与 $W$ 之间的联系是什么？$\Delta W$ 是否与 $W$ 高度相关？$\Delta W$ 相对于 $W$ 有多大？</li>
+</ol>
+<p>我们相信对问题（2）和（3）的回答能揭示使用预训练语言模型进行下游任务的基本原则，这是NLP中的一个关键话题。</p>
+<h3 id="7-1-Which-Weight-Matrices-in-Transformer-should-we-apply-LoRa-to"><a href="#7-1-Which-Weight-Matrices-in-Transformer-should-we-apply-LoRa-to" class="headerlink" title="7.1 Which Weight Matrices in Transformer should we apply LoRa to"></a>7.1 Which Weight Matrices in Transformer should we apply LoRa to</h3><p>在有限的参数预算下，我们应该适应哪些类型的权重以通过LoRA在下游任务中获得最佳性能？如第4.2节所述，我们只考虑自注意力模块中的权重矩阵。在GPT-3 175B上，我们设定了1800万参数预算（如果以FP16存储，大约为35MB），这对应于在所有96层中，如果适应一种类型的注意力权重，则 $r = 8$，如果适应两种类型，则 $r = 4$。结果如表5所示。<br><img src="/zh-hans/2024/07/09/papers-paper02-lora/lora07.png" srcset="/zh-hans/img/loading.gif" lazyload alt="表5：在相同数量的可训练参数下，将LoRA应用于GPT-3中不同类型的注意力权重后的WikiSQL和MultiNLI验证准确性。对W_q和W_v进行适应总体上表现最佳。我们发现对于给定的数据集，随机种子之间的标准差是一致的，并在第一列中报告。"><br>请注意，将所有参数放在 $\Delta W_q$ 或 $\Delta W_k$ 中会显著降低性能，而适应 $W_q$ 和 $W_v$ 则产生最佳结果。这表明，即使是秩为四的情况下，$\Delta W$ 中也包含足够的信息，因此适应更多的权重矩阵比用更大的秩适应单一类型的权重更可取。</p>
+<h3 id="7-2-What-is-the-optimal-rank-for-LoRA"><a href="#7-2-What-is-the-optimal-rank-for-LoRA" class="headerlink" title="7.2 What is the optimal rank for LoRA"></a>7.2 What is the optimal rank for LoRA</h3><p>我们将注意力转向秩 $r$ 对模型性能的影响。我们适应 $\{W_q, W_v\}$、$\{W_q, W_k, W_v, W_c\}$ 以及仅适应 $W_q$ 进行比较。<br><img src="/zh-hans/2024/07/09/papers-paper02-lora/lora08.png" srcset="/zh-hans/img/loading.gif" lazyload alt="表6：在WikiSQL和MultiNLI上的不同秩r的验证准确性。令我们惊讶的是，对于这些数据集，适应W_q和W_v的秩小至1就足够了，而单独训练W_q需要更大的r。我们在第H.2节中对GPT-2进行了类似的实验。"><br>表6显示，令人惊讶的是，即使在非常小的 $r$ 下，LoRA 也表现得非常有竞争力（尤其是 $\{W_q, W_v\}$ 比仅适应 $W_q$ 更为显著）。这表明更新矩阵 $\Delta W$ 可能具有非常小的“内在秩”。为了进一步支持这一发现，我们检查了不同 $r$ 的选择和不同随机种子所学习到的子空间的重叠情况。我们认为，增加 $r$ 并不会覆盖更多有意义的子空间，这表明低秩适应矩阵已经足够。</p>
+<p><strong>不同 $r$ 的子空间相似性</strong>。给定 $A_{r=8}$ 和 $A_{r=64}$，它们是使用相同预训练模型学习到的秩为 $r=8$ 和 $r=64$ 的适应矩阵，我们进行奇异值分解，得到右奇异酉矩阵 $U_{A_{r=8}}$ 和 $U_{A_{r=64}}$。我们希望回答的问题是：$U_{A_{r=8}}$ 中前 $i$ 个奇异向量所跨越的子空间有多少包含在 $U_{A_{r=64}}$ 的前 $j$ 个奇异向量所跨越的子空间中（对于 $1 \le i \le 8$ 和 $1 \le j \le 64$）？我们用基于Grassmann距离的归一化子空间相似性来测量这个量（见附录G的正式讨论）：</p>
+<script type="math/tex; mode=display">
+\phi(A_{r=8}, A_{r=64}, i, j) = \frac{||U_i^\top U_j||_F^2}{\min(i, j)} \in [0, 1]</script><p>其中 $U_i$ 表示 $U_{A_{r=8}}$ 中对应前 $i$ 个奇异向量的列。</p>
+<p>$\phi(\cdot)$ 的范围是 $[0, 1]$，其中 1 表示子空间完全重叠，0 表示完全分离。图3展示了随着 $i$ 和 $j$ 的变化 $\phi$ 的变化。由于空间限制，我们仅查看第48层（共96层）中的情况，但结论对其他层也成立，如第H.1节所示。</p>
+<p><img src="/zh-hans/2024/07/09/papers-paper02-lora/lora09.png" srcset="/zh-hans/img/loading.gif" lazyload alt="图3：$A_{r=8}$ 和 $A_{r=64}$ 的列向量之间的子空间相似性，分别针对 $\Delta W_q$ 和 $\Delta W_v$。第三和第四幅图放大了前两幅图中的左下角三角区域。$r = 8$ 的顶级方向包含在 $r = 64$ 中，反之亦然。"><br>我们从图3中观察到一个重要现象。$A_{r=8}$ 和 $A_{r=64}$ 之间对应于顶级奇异向量的方向显著重叠，而其他方向则没有。具体来说，$A_{r=8}$ 的 $\Delta W_v$（或者 $\Delta W_q$）和 $A_{r=64}$ 的 $\Delta W_v$（或者 $\Delta W_q$）共享一个维度为1的子空间，其归一化相似度大于0.5，这解释了为什么在GPT-3的下游任务中，$r = 1$ 表现相当好。</p>
+<p>由于 $A_{r=8}$ 和 $A_{r=64}$ 都使用相同的预训练模型进行学习，图3表明 $A_{r=8}$ 和 $A_{r=64}$ 的顶级奇异向量方向是最有用的，而其他方向可能主要包含在训练过程中积累的随机噪声。因此，适应矩阵确实可以具有非常低的秩。</p>
+<p>不同随机种子的子空间相似性。我们进一步通过绘制两个随机种子运行之间 $r = 64$ 的归一化子空间相似性来确认这一点，如图4所示。$ \Delta W_q$ 似乎具有比 $ \Delta W_v$ 更高的“内在秩”，因为两个运行对于 $ \Delta W_q$ 学习到了更多的共同奇异值方向，这与我们在表6中的实证观察一致。作为对比，我们还绘制了两个随机高斯矩阵，它们彼此之间不共享任何共同的奇异值方向。</p>
+<p><img src="/zh-hans/2024/07/09/papers-paper02-lora/lora10.png" srcset="/zh-hans/img/loading.gif" lazyload alt="左图和中图：两个随机种子生成的 $A_{r=64}$ 的列向量之间的归一化子空间相似性，分别针对第48层的 $\Delta W_q$ 和 $\Delta W_v$。右图：两个随机高斯矩阵的列向量之间的相同热图。其他层的结果见第H.1节。"></p>
+<h3 id="7-3-How-does-the-adaptation-matrix-Delta-W-compare-to-W"><a href="#7-3-How-does-the-adaptation-matrix-Delta-W-compare-to-W" class="headerlink" title="7.3 How does the adaptation matrix $\Delta W$ compare to W"></a>7.3 How does the adaptation matrix $\Delta W$ compare to W</h3><p>我们进一步研究了 $\Delta W$ 和 $W$ 之间的关系。特别是，$\Delta W$ 是否与 $W$ 高度相关？（或者从数学上讲，$\Delta W$ 是否主要包含在 $W$ 的顶级奇异方向中？）此外，$\Delta W$ 相对于 $W$ 中对应的方向有多“大”？这可以揭示适应预训练语言模型的基本机制。</p>
+<p>为了解答这些问题，我们通过计算 $U^\top W V^\top$ 将 $W$ 投影到 $\Delta W$ 的 $r$ 维子空间中，其中 $U/V$ 是 $\Delta W$ 的左/右奇异向量矩阵。然后，我们比较 $|U^\top W V^\top|_F$ 和 $|W|_F$ 之间的Frobenius范数。作为对比，我们还通过用 $W$ 的前 $r$ 个奇异向量或一个随机矩阵替换 $U, V$ 来计算 $|U^\top W V^\top|_F$。<br><img src="/zh-hans/2024/07/09/papers-paper02-lora/lora11.png" srcset="/zh-hans/img/loading.gif" lazyload alt="表7：$U^TW_qV^T$的Frobenius范数，其中$U$和$V$分别是 (1)$\Delta W_q$、(2) $W_q$或 (3) 随机矩阵,的左/右前r个奇异向量方向。权重矩阵取自GPT-3的第48层。"><br>从表7中我们得出以下结论。首先，$\Delta W$ 与 $W$ 的相关性比随机矩阵更强，这表明 $\Delta W$ 放大了 $W$ 中已经存在的一些特征。其次，$\Delta W$ 并不是重复 $W$ 的顶级奇异方向，而是放大了 $W$ 中没有强调的方向。第三，放大因子相当大：对于 $r = 4$ 的情况，约为21.5（即 $\approx 6.91/0.32$）。见第H.4节了解为什么 $r = 64$ 的放大因子较小。我们还在第H.3节提供了一个可视化，展示了随着我们包括更多 $W_q$ 的顶级奇异方向，相关性如何变化。这表明低秩适应矩阵可能放大了在一般预训练模型中已学习但未强调的特定下游任务的重要特征。</p>
+<h2 id="8-Conclusion-and-future-work"><a href="#8-Conclusion-and-future-work" class="headerlink" title="8 Conclusion and future work"></a>8 Conclusion and future work</h2><p>微调庞大的语言模型在硬件需求和为不同任务托管独立实例的存储/切换成本方面是极其昂贵的。我们提出了LoRA，这是一种高效的适应策略，既不引入推理延迟，也不减少输入序列长度，同时保持高模型质量。重要的是，它允许在作为服务部署时，通过共享绝大多数模型参数来实现快速任务切换。虽然我们专注于Transformer语言模型，但所提出的原则普遍适用于任何具有密集层的神经网络。</p>
+<p>未来工作有很多方向。1）LoRA可以与其他高效的适应方法结合，可能提供正交的改进。2）微调或LoRA背后的机制尚不清楚——预训练过程中学习到的特征如何转化为在下游任务中表现良好？我们相信，LoRA比全量微调更容易回答这个问题。3）我们主要依靠启发式方法选择应用LoRA的权重矩阵。有更有原则的方法来做这件事吗？4）最后，$\Delta W$ 的秩不足表明 $W$ 也可能存在秩不足，这也可以成为未来工作的灵感来源。</p>
+<h2 id="参考："><a href="#参考：" class="headerlink" title="参考："></a>参考：</h2><p>LoRA论文：<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2106.09685">Low-Rank Adaptation of Large Language Models</a></p>
+<p>给GPT2添加LoRA模块的代码实现：<a target="_blank" rel="noopener" href="https://github.com/tsmatz/finetune_llm_with_lora/blob/master/02-finetune-gpt2-with-lora.ipynb">github代码实现</a></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/zh-hans/categories/%E8%AE%BA%E6%96%87%E7%B2%BE%E8%AF%BB/" class="category-chain-item">论文精读</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/zh-hans/tags/%E8%AE%BA%E6%96%87%E7%B2%BE%E8%AF%BB/" class="print-no-link">#论文精读</a>
+      
+        <a href="/zh-hans/tags/LoRA/" class="print-no-link">#LoRA</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>LoRA论文精读</div>
+      <div>https://kangkang37.github.io/zh-hans/2024/07/09/papers-paper02-lora/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>kq</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年7月9日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/zh-hans/2024/07/10/papers-paper03-cpt/" title="CPT Cyclic Precision Training 论文精读">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">CPT Cyclic Precision Training 论文精读</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/zh-hans/2024/07/09/quant/" title="大模型量化技术的原理和代码实现">
+                        <span class="hidden-mobile">大模型量化技术的原理和代码实现</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="" ><span>Kangkang</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/kangkang37" target="_blank" rel="nofollow noopener"><span>GitHub</span></a>     
+    </div>
+  
+  
+    <div class="statistics">
+  
+  
+
+  
+    
+      <span id="leancloud-site-pv-container" style="display: none">
+        点击量: 
+        <span id="leancloud-site-pv"></span>
+         ,
+      </span>
+    
+    
+      <span id="leancloud-site-uv-container" style="display: none">
+        访问人数: 
+        <span id="leancloud-site-uv"></span>
+         
+      </span>
+    
+    
+
+  
+</div>
+
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/zh-hans/js/events.js" ></script>
+<script  src="/zh-hans/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/zh-hans/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            loader : {
+              load: ['ui/lazy']
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.2/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/zh-hans/js/leancloud.js" ></script>
+
+  <script  src="/zh-hans/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/zh-hans/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>

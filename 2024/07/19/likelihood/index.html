@@ -1,0 +1,878 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/zh-hans/img/fluid.png">
+  <link rel="icon" href="/zh-hans/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="kq">
+  <meta name="keywords" content="hexo, blog, ai, artificial intelligence">
+  
+    <meta name="description" content="最大似然估计和CE的关系为了理解CE和最大似然法之间的关系, 首先理解基本概念. 信息量和熵信息量信息量衡量了时间的不确定性, 一个时间发生的概率越大, 不确定性就越小, 信息量就越少. 公式:   L(x_0) &#x3D; - \log p(x_0)事件$x_0$, 事件发生的概率是$p(x_0)$, 若事件必然发生, $p(x_0)&#x3D;1$, 信息量为0. 熵熵衡量了系统的混乱程度和不确定性. 熵越大,">
+<meta property="og:type" content="article">
+<meta property="og:title" content="最大似然估计和CE的关系">
+<meta property="og:url" content="https://kangkang37.github.io/zh-hans/2024/07/19/likelihood/index.html">
+<meta property="og:site_name" content="KQ&#39;s AI Blog">
+<meta property="og:description" content="最大似然估计和CE的关系为了理解CE和最大似然法之间的关系, 首先理解基本概念. 信息量和熵信息量信息量衡量了时间的不确定性, 一个时间发生的概率越大, 不确定性就越小, 信息量就越少. 公式:   L(x_0) &#x3D; - \log p(x_0)事件$x_0$, 事件发生的概率是$p(x_0)$, 若事件必然发生, $p(x_0)&#x3D;1$, 信息量为0. 熵熵衡量了系统的混乱程度和不确定性. 熵越大,">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-07-20T05:35:32.000Z">
+<meta property="article:modified_time" content="2024-07-20T15:38:41.948Z">
+<meta property="article:author" content="kq">
+<meta property="article:tag" content="损失函数">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>最大似然估计和CE的关系 - KQ&#39;s AI Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/zh-hans/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/zh-hans/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/zh-hans/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"kangkang37.github.io","root":"/zh-hans/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Oy95QsXXN5Dq2RLD8evjzYEP-MdYXbMMI","app_key":"g2P9HRXegX1XhaV3or2pH3zk","server_url":null,"path":"window.location.pathname","ignore_local":true}},"search_path":"/zh-hans/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/zh-hans/js/utils.js" ></script>
+  <script  src="/zh-hans/js/color-schema.js" ></script>
+  
+
+  
+
+  
+    <!-- Google tag (gtag.js) -->
+    <script async>
+      if (!Fluid.ctx.dnt) {
+        Fluid.utils.createScript("https://www.googletagmanager.com/gtag/js?id=", function() {
+          window.dataLayer = window.dataLayer || [];
+          function gtag() {
+            dataLayer.push(arguments);
+          }
+          gtag('js', new Date());
+          gtag('config', '');
+        });
+      }
+    </script>
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<script src="/zh-hans/js/hexo_resize_image.js"></script> 
+<!-- ## -->
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/zh-hans/">
+      <strong>KQ&#39;s AI Blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="https://kangkang37.github.io" target="_self">
+                <i class="iconfont icon-language"></i>
+                <span>language</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/zh-hans/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="最大似然估计和CE的关系"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        kq
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-07-19 22:35" pubdate>
+          2024年7月19日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          15 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="leancloud-page-views"></span> 次
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">最大似然估计和CE的关系</h1>
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    本文最后更新于 2024年7月20日早上8点38分
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="最大似然估计和CE的关系"><a href="#最大似然估计和CE的关系" class="headerlink" title="最大似然估计和CE的关系"></a>最大似然估计和CE的关系</h1><p>为了理解CE和最大似然法之间的关系, 首先理解基本概念.</p>
+<h2 id="信息量和熵"><a href="#信息量和熵" class="headerlink" title="信息量和熵"></a>信息量和熵</h2><p><strong>信息量</strong><br>信息量衡量了时间的不确定性, 一个时间发生的概率越大, 不确定性就越小, 信息量就越少. 公式: </p>
+<script type="math/tex; mode=display">
+L(x_0) = - \log p(x_0)</script><p>事件$x_0$, 事件发生的概率是$p(x_0)$, 若事件必然发生, $p(x_0)=1$, 信息量为0.</p>
+<p><strong>熵</strong><br>熵衡量了系统的混乱程度和不确定性. 熵越大,不确定性越大, 信息量越大. 熵的计算公式: </p>
+<script type="math/tex; mode=display">
+H(p) = -\sum_{i=1}^n p(x_i) \log p(x_i) \tag{1}</script><p>其中事件变量X, $p(x_i)$表示事件$X=x_i$的概率, $- \log p(x_i)$就是事件$X=x_i$的信息量.</p>
+<p>可以发现, 熵是信息量的期望, 各个事件发生概率乘以其信息量. 熵越大, X取值越难确定, 系统越不稳定. </p>
+<h2 id="相对熵-relative-entropy"><a href="#相对熵-relative-entropy" class="headerlink" title="相对熵 relative entropy"></a>相对熵 relative entropy</h2><p>相对熵也称为KL散度(Kullback-Lerbler divergence), 表示一个随机变量的两个不同分布的距离.  假设$p(x)$和$q(x)$分别是离散随机变量X的两个分布概率, 则p相对于q的相对熵是: </p>
+<script type="math/tex; mode=display">
+D_{KL}(p||q) = \sum_i p(x_i) \log \frac{p(x_i)}{q(x_i)} \tag{2}</script><p>相对熵的性质: </p>
+<ol>
+<li>如果$p(x)$和$q(x)$的分布相同, 则其相对熵=0.</li>
+<li>相对熵不具有对称性, $D_{KL}(p||q)!=D_{KL}(q||p)$</li>
+<li>$D_{KL}(p||q)\geq 0$</li>
+</ol>
+<h2 id="交叉熵-cross-entropy"><a href="#交叉熵-cross-entropy" class="headerlink" title="交叉熵 cross entropy"></a>交叉熵 cross entropy</h2><p>假设$p(x)$和$q(x)$分别是离散随机变量X的两个分布概率, 其中$p(x)$是目标分布, $q(x)$是预测分布, p和q的交叉熵可以看做, 使用预测分布表示目标分布的困难程度: </p>
+<script type="math/tex; mode=display">
+H(p,q) = \sum_i p(x_i) \log \frac{1}{\log q(x_i)} = - \sum_i p(x_i) \log q(x_i) \tag{3}</script><p><strong>熵,交叉熵,相对熵的关系: </strong><br>根据上面的三个公式, 下面很容易推导: </p>
+<script type="math/tex; mode=display">
+D_{KL}(p,q) = H(p,q) -H(p)</script><p>在机器学习中, 目标分布$p(x)$即真实分布是固定的, 所以$H(p)$是固定的, 最小化交叉熵等价于最小化相对熵. </p>
+<h2 id="交叉熵损失函数-CE-loss"><a href="#交叉熵损失函数-CE-loss" class="headerlink" title="交叉熵损失函数 CE loss"></a>交叉熵损失函数 CE loss</h2><p>假设batch size=n, 是m分类问题, 交叉熵损失函数的公式: </p>
+<script type="math/tex; mode=display">
+CELoss = -\frac{1}{n} \sum_{i=1}^n p(x_i) \log q(x_i) = -\frac{1}{n} \sum_{i=1}^n \sum_{j=1}^m p(x_i^j) \log q(x_i^j)</script><p>其中$p(x_i)$是真实label, $q(x_i)$是预测label, $x_i$是一个batch中的第i个向量, $x_i^j$是第i个向量的第j个元素.</p>
+<h2 id="最大似然估计"><a href="#最大似然估计" class="headerlink" title="最大似然估计"></a>最大似然估计</h2><p>最大似然估计是一种参数估计. 现在对某个变量X, 我们知道它分布服从某种分布形态（二项分布/正态分布/指数分布等），但是分布的具体参数不知道。<br>此时可以借助从总体抽样的方式，估计未知参数。  </p>
+<p>通过一个简单例子便于理解:<br>假设研究对象X的分布是二项分布，即0-1分布，其中1的概率是p。如果知道p的值，就知道了分布形态的全部。但现在只是到分布形态是二项分布, 不知道具体p值是什么. 就可以通过最大似然估计求p值.</p>
+<p>具体方法是这样: 首先抽样, 得到样本集$X=[x_1, x_2, .., x_n]$, 包含n个样本, 独立同分布. 任何一个参数$x_i$的取值概率是$p(x_i|\theta)$, 其中$\theta$是这个分布函数的未知参数. (上例中x_i为0或者1, 未知参数是p)</p>
+<p>则得到当前样本集的概率是: </p>
+<script type="math/tex; mode=display">
+P(X)=P(x_1|\theta) P(x_2 | \theta) P(x_3| \theta) ... P(x_n | \theta)</script><p>这个$P(X)$是关于未知参数$\theta$的函数. 函数$P(X)$是参数$\theta$相对于样本集X的似然函数 likelihood, 可以写作: </p>
+<script type="math/tex; mode=display">
+L(\theta) = L(x_1, x_2..x_n | \theta) = P(x_1|\theta) P(x_2 | \theta) ... P(x_n | \theta)</script><p>因为现在抽取到样本集X已成为既定事实, 这个事件发生了, 我们可以假设这个事件发生的概率尽可能大, 即我们要求未知参数$\theta$的值, 让这个似然函数$L(\theta)$的取值尽可能大, 这就是最大似然估计.</p>
+<p>最大似然估计: 找到让似然函数$L(\theta)$的取值尽可能大的$\theta$值, $argmax L(\theta)$.</p>
+<p>在求极值之前, 先取似然函数的对数, 得到对数似然函数. 因为似然函数是多个项的乘积, 可能会是多个小数相乘得到一个非常小的值, 造成下溢underflow. </p>
+<p>对数似然函数: </p>
+<script type="math/tex; mode=display">
+l(\theta) = \log L(\theta) = \log (P(x_1|\theta) P(x_2 | \theta) ... P(x_n | \theta)) = \sum_i \log P(x_i | \theta)</script><p>如何求$\theta$的值, 让对数似然函数的取值最大? 先对对数似然函数求关于$\theta$的偏导数, 令偏导=0, 得到似然方程. 然后求似然方程得到$\theta$的取值.</p>
+<p><strong>总结, 最大似然估计的流程: </strong><br>(现在知道某个变量的分布函数, 但不知道具体参数, 通过最大似然估计求未知参数.)</p>
+<ol>
+<li>首先对变量X进行抽样, 得到样本集$X=[x_1, x_2, .., x_n]$.</li>
+<li>得到似然函数 $L(\theta) =  P(x_1|\theta) … P(x_n | \theta)$</li>
+<li>得到对数似然函数 $l(\theta) = \log L(\theta) $.</li>
+<li>进行最大似然估计 $argmax_{\theta} l(\theta)$:<br> a. 把对数似然函数求关于$\theta$的偏导数, 令偏导=0, 得到似然方程.<br> b. 求解似然方程得到$\theta$的取值.</li>
+</ol>
+<h2 id="最大似然估计和交叉熵的关系"><a href="#最大似然估计和交叉熵的关系" class="headerlink" title="最大似然估计和交叉熵的关系"></a>最大似然估计和交叉熵的关系</h2><p>现在知道最大似然估计maximum likelihood estimation是: </p>
+<script type="math/tex; mode=display">
+\theta_{ML} = argmax_{\theta} \sum_{i=1}^n \log p(x_i | \theta)</script><p>进行放缩, 两边除以样本个数n: </p>
+<script type="math/tex; mode=display">
+\theta_{ML} = argmax_{\theta} \frac{1}{n} \sum_{i=1}^n \log p(x_i | \theta) \tag{a}</script><p>上述公式a是对随机变量X的函数$\log p(X | \theta)$求均值, 根据大数定理, 随着样本容量n的增加, 样本的算术平均值等于随机变量X的期望, 即: </p>
+<script type="math/tex; mode=display">
+\frac{1}{n} \sum_{i=1}^n \log p(x_i | \theta) \rightarrow E_X(\log p(X|\theta))</script><p>其中, $E_X$表示变量X的函数$\log p(X | \theta)$的期望.</p>
+<p>这样, 当样本集n很大时, 最大似然估计可以看做: </p>
+<script type="math/tex; mode=display">
+\begin{aligned}
+\theta_{ML} &= argmax_{\theta} E_X(\log p(X|\theta))  \\
+&= argmin_{\theta} E_X(- \log p(X|\theta)) 
+\end{aligned}</script><p>相对熵可以这样变换: </p>
+<script type="math/tex; mode=display">
+\begin{aligned}
+D_{KL}(q||p) &= \sum_i q(x_i) \log \frac{q(x_i)}{p(x_i)} \\
+&=E_x \log(\frac{q(x)}{p(x)}) \\
+&= E_x ( \log q(x) - \log p(x)) \\
+&= E_x (\log q(x)) - E_x(\log p(x))
+\end{aligned}</script><p>其中$q(x)$是目标分布, 是固定的, 所以$E_x (\log q(x))$是固定的; $p(x)$是预测分布.</p>
+<p>最小化$D_{KL}(q||p)$ $\Longleftrightarrow$ 最小化$(- E_x(\log p(x)))$ $\Longleftrightarrow$ 最大化似然估计. ($\Longleftrightarrow$表示‘等价于’)</p>
+<p>因为</p>
+<script type="math/tex; mode=display">
+D_{KL}(q||p) = H(q,p) -H(q)</script><p>最小化$D_{KL}(q||p)$等价于最小化$H(q,p)$.</p>
+<p>所以: 最小化交叉熵$H(q,p)$ $\Longleftrightarrow$ 最大似然估计$argmax_{\theta}   l(x|\theta)$.<br>其中q是变量x的真实分布, p是x的预测分布, $\theta$是$p(x)$的未知参数. </p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考:"></a>参考:</h2><p>基础篇：<br><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/191c029ad369">https://www.jianshu.com/p/191c029ad369</a><br>进阶篇：<br><a target="_blank" rel="noopener" href="https://www.cnblogs.com/wangguchangqing/p/12068084.html">https://www.cnblogs.com/wangguchangqing/p/12068084.html</a></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/zh-hans/categories/ML%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" class="category-chain-item">ML基础知识</a>
+  
+  
+    <span>></span>
+    
+  <a href="/zh-hans/categories/ML%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/%E6%8D%9F%E5%A4%B1%E5%87%BD%E6%95%B0/" class="category-chain-item">损失函数</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/zh-hans/tags/%E6%8D%9F%E5%A4%B1%E5%87%BD%E6%95%B0/" class="print-no-link">#损失函数</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>最大似然估计和CE的关系</div>
+      <div>https://kangkang37.github.io/zh-hans/2024/07/19/likelihood/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>kq</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年7月19日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/zh-hans/2024/07/20/llama3/" title="通俗理解llama3的性能和创新">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">通俗理解llama3的性能和创新</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/zh-hans/2024/07/19/loss-func/" title="常见损失函数介绍">
+                        <span class="hidden-mobile">常见损失函数介绍</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="" ><span>Kangkang</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/kangkang37" target="_blank" rel="nofollow noopener"><span>GitHub</span></a>     
+    </div>
+  
+  
+    <div class="statistics">
+  
+  
+
+  
+    
+      <span id="leancloud-site-pv-container" style="display: none">
+        点击量: 
+        <span id="leancloud-site-pv"></span>
+         ,
+      </span>
+    
+    
+      <span id="leancloud-site-uv-container" style="display: none">
+        访问人数: 
+        <span id="leancloud-site-uv"></span>
+         
+      </span>
+    
+    
+
+  
+</div>
+
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/zh-hans/js/events.js" ></script>
+<script  src="/zh-hans/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/zh-hans/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            loader : {
+              load: ['ui/lazy']
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.2/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/zh-hans/js/leancloud.js" ></script>
+
+  <script  src="/zh-hans/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/zh-hans/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>

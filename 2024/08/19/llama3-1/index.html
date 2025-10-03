@@ -1,0 +1,868 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/zh-hans/img/fluid.png">
+  <link rel="icon" href="/zh-hans/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="kq">
+  <meta name="keywords" content="hexo, blog, ai, artificial intelligence">
+  
+    <meta name="description" content="一文理解llama3.1模型的性能2024年7月23日, Meta发布了最新的Llama3.1模型, llama3.1中包含了新的405B模型, 更新了之前的llama3 8B和70B模型, 并扩展了context window, 支持8种语言. llama3.1的405B模型在常识(general knowledge), 可操纵性, 数学, 工具使用和多语言翻译等任务中可以与领先的闭源模型相媲美">
+<meta property="og:type" content="article">
+<meta property="og:title" content="llama3.1模型的下载和性能测评">
+<meta property="og:url" content="https://kangkang37.github.io/zh-hans/2024/08/19/llama3-1/index.html">
+<meta property="og:site_name" content="KQ&#39;s AI Blog">
+<meta property="og:description" content="一文理解llama3.1模型的性能2024年7月23日, Meta发布了最新的Llama3.1模型, llama3.1中包含了新的405B模型, 更新了之前的llama3 8B和70B模型, 并扩展了context window, 支持8种语言. llama3.1的405B模型在常识(general knowledge), 可操纵性, 数学, 工具使用和多语言翻译等任务中可以与领先的闭源模型相媲美">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/08/19/llama3-1/llama3-1-01.png">
+<meta property="article:published_time" content="2024-08-20T00:40:49.000Z">
+<meta property="article:modified_time" content="2025-04-17T22:09:42.425Z">
+<meta property="article:author" content="kq">
+<meta property="article:tag" content="llama">
+<meta property="article:tag" content="lm-eval-harness">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://kangkang37.github.io/zh-hans/2024/08/19/llama3-1/llama3-1-01.png">
+  
+  
+  
+  <title>llama3.1模型的下载和性能测评 - KQ&#39;s AI Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/zh-hans/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/zh-hans/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/zh-hans/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"kangkang37.github.io","root":"/zh-hans/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Oy95QsXXN5Dq2RLD8evjzYEP-MdYXbMMI","app_key":"g2P9HRXegX1XhaV3or2pH3zk","server_url":null,"path":"window.location.pathname","ignore_local":true}},"search_path":"/zh-hans/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/zh-hans/js/utils.js" ></script>
+  <script  src="/zh-hans/js/color-schema.js" ></script>
+  
+
+  
+
+  
+    <!-- Google tag (gtag.js) -->
+    <script async>
+      if (!Fluid.ctx.dnt) {
+        Fluid.utils.createScript("https://www.googletagmanager.com/gtag/js?id=", function() {
+          window.dataLayer = window.dataLayer || [];
+          function gtag() {
+            dataLayer.push(arguments);
+          }
+          gtag('js', new Date());
+          gtag('config', '');
+        });
+      }
+    </script>
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<script src="/zh-hans/js/hexo_resize_image.js"></script> 
+<!-- ## -->
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/zh-hans/">
+      <strong>KQ&#39;s AI Blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="https://kangkang37.github.io" target="_self">
+                <i class="iconfont icon-language"></i>
+                <span>language</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/zh-hans/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="llama3.1模型的下载和性能测评"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        kq
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-08-19 17:40" pubdate>
+          2024年8月19日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          34 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="leancloud-page-views"></span> 次
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">llama3.1模型的下载和性能测评</h1>
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    本文最后更新于 2025年4月17日下午3点09分
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="一文理解llama3-1模型的性能"><a href="#一文理解llama3-1模型的性能" class="headerlink" title="一文理解llama3.1模型的性能"></a>一文理解llama3.1模型的性能</h1><p>2024年7月23日, Meta发布了最新的Llama3.1模型, llama3.1中包含了新的405B模型, 更新了之前的llama3 8B和70B模型, 并扩展了context window, 支持8种语言. llama3.1的405B模型在常识(general knowledge), 可操纵性, 数学, 工具使用和多语言翻译等任务中可以与领先的闭源模型相媲美。 </p>
+<p>Meta llama3.1是支持多语言的大语言模型(multilingual LLMs), 包含8B, 70B, 405B的pretrained和instruction-tuned模型. 目前只支持文本输入和文本/代码输出, 是text-only的, 不支持图片输入输出. </p>
+<p>llama3.1支持这8种语言: 英语, 德语, 法语, 意大利语, 葡萄牙语, 印地语, 西班牙语和泰语. 不支持中文. 不过, 模型在更广泛的语言集合上进行过训练, 开发者可以使用这8种语言之外的语言对模型进行微调. </p>
+<p>LLama3.1是auto-regressive自回归语言模型, 使用的优化后的transformer架构. 模型的微调使用supervised fine-tuning (SFT)和reinforcement learning with human feedback(RLHF).</p>
+<h2 id="llama3-1的训练细节"><a href="#llama3-1的训练细节" class="headerlink" title="llama3.1的训练细节"></a>llama3.1的训练细节</h2><p>llama3.1(text only)使用一个新的混合的公开数据集用于训练. 有三个版本: 8B, 70B, 405B. 输入的模态是多语言文本, 输出模态是多语言文本和代码. Context length是128K. 三个版本都使用 grouped-query attention (GQA)训练, 以改善推理能力. 预训练使用的数据token个数超过15T. knowledge cutoff时间是2023年12月, 即模型最新知识更新至23年12月.</p>
+<p>目前这个模型是静态的, 训练于离线数据集. </p>
+<p><strong>训练时间</strong><br>使用自定义训练库, 和Meta定制的GPU集群来训练. 使用的GPU是H100-80GB, 累计使用39.3M GPU hours. 其中8B模型的训练时长是1.46M GPU hours, 70B的训练时长是7.0M GPU hours, 405B训练时长是30.84M GPU hours. 训练时长指的是训练每个模型需要的总GPU时间.</p>
+<p><strong>训练数据</strong><br>llama3.1在超过15 trillion tokens上面进行预训练, 是公开的数据集. 微调数据包含公开的指令数据集, 和超过25 million的合成示例.</p>
+<p>上面提到的模型参数大小B, 和训练使用的token个数T到底多大:<br><figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs markdown">1M = 1,000,000<br>1B = 1,000,000,000<br>1T = 1,000,000,000,000<br></code></pre></td></tr></table></figure></p>
+<h2 id="如何下载llama3-1"><a href="#如何下载llama3-1" class="headerlink" title="如何下载llama3.1"></a>如何下载llama3.1</h2><p>主要有两种方法下载llama模型的参数和tokenizer.</p>
+<p>首先需要区分两个概念: 模型代码, 和模型的weights与tokenizer. </p>
+<p>在<a target="_blank" rel="noopener" href="https://github.com/meta-llama/llama-models/tree/main?tab=readme-ov-file">GitHub Meta Llama</a>中, 包含了llama2, llama3, llama3.1的模型代码, generate.py, tokenizer.py, model.py. 可以自行下载. 这个代码可以给人们学习理解llama模型的结构原理:<br><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">git clone git@github.com:meta-llama/llama-models.git<br></code></pre></td></tr></table></figure></p>
+<p>但是如果想要运行使用llama3.1模型, 只有这个代码是不够的, 更重要的是权重参数和tokenizer. 参数是使用大量数据pre-train或者instruction-tuned之后的参数, 赋予模型理解和回答的能力, 否则模型只是一个空壳. tokenizer也是通过大量文本训练的分词器.</p>
+<p>模型weights和tokenizer的下载和使用需要申请, 可以通过meta llama官网申请, 也可以通过hugging face申请. </p>
+<h3 id="huggingface申请"><a href="#huggingface申请" class="headerlink" title="huggingface申请"></a>huggingface申请</h3><p>我是用的huggingface来申请使用llama3.1. 首先需要登陆或者注册一个huggingface的账号, 然后进入<a target="_blank" rel="noopener" href="https://huggingface.co/collections/meta-llama/llama-31-669fc079a0c406a149a5738f">huggingface-llama3.1</a>, 选择一个版本模型, 我选择的是Meta-Llama-3.1-8B, 然后阅读‘LLAMA 3.1 COMMUNITY LICENSE AGREEMENT’, 填写图1这个表格并提交, 然后等待审核通过.<br><img src="/zh-hans/2024/08/19/llama3-1/llama3-1-01.png" srcset="/zh-hans/img/loading.gif" lazyload alt="图1: 填写这个表格并提交"></p>
+<p>huggingface的申请很快, 基本一小时以内可以申请通过, 当出现‘You have been granted access to this model’字样, 表示你可以使用这个模型了.</p>
+<p>huggingface申请通过后, 就能通过huggingface调用llama3.1啦:<br><figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs 1c"><span class="hljs-meta"># 注意使用llama3.1, transformer需要 &gt;= 4.43.0</span><br>pip install --upgrade transformers<br>pip list <span class="hljs-string">| grep transformers</span><br></code></pre></td></tr></table></figure><br><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs routeros">import transformers<br>import torch<br><br>model_id = <span class="hljs-string">&quot;meta-llama/Meta-Llama-3.1-8B&quot;</span><br>token = <span class="hljs-string">&#x27;your huggingface token&#x27;</span><br>pipeline = transformers.pipeline(<br>    <span class="hljs-string">&quot;text-generation&quot;</span>, <span class="hljs-attribute">model</span>=model_id, model_kwargs=&#123;<span class="hljs-string">&quot;torch_dtype&quot;</span>: torch.bfloat16&#125;, <span class="hljs-attribute">device_map</span>=<span class="hljs-string">&quot;auto&quot;</span>, <span class="hljs-attribute">token</span>=token<br>)<br><br>pipeline(<span class="hljs-string">&quot;Hey how are you doing today?&quot;</span>)<br></code></pre></td></tr></table></figure><br><figure class="highlight ocaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs ocaml"># output<br>[&#123;<span class="hljs-symbol">&#x27;generated_text&#x27;</span>: <span class="hljs-symbol">&#x27;Hey</span> how are you doing today? <span class="hljs-type">I</span>’m good. <span class="hljs-type">I</span>’m just here <span class="hljs-keyword">to</span> talk <span class="hljs-keyword">to</span> you&#x27;&#125;]<br></code></pre></td></tr></table></figure></p>
+<h3 id="Meta-Llama官网申请"><a href="#Meta-Llama官网申请" class="headerlink" title="Meta Llama官网申请"></a>Meta Llama官网申请</h3><p>除了用huggingface, 还可以通过Meta llama官网申请下载模型参数和tokenizer: <a target="_blank" rel="noopener" href="https://llama.meta.com/llama-downloads/">Request Access to Llama Models</a>. </p>
+<p>步骤如下: </p>
+<ol>
+<li>申请下载<a target="_blank" rel="noopener" href="https://llama.meta.com/llama-downloads/">Request Access to Llama Models</a>. </li>
+<li>申请通过后, 把github的代码clone到本地: <a target="_blank" rel="noopener" href="https://github.com/meta-llama/llama-models/tree/main?tab=readme-ov-file">Meta-llama</a>.<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">git <span class="hljs-built_in">clone</span> git@github.com:meta-llama/llama-models.git<br></code></pre></td></tr></table></figure></li>
+<li>进入本地相关路径, 比如./llama-models/models/llama3_1, 这里面有一个download.sh文件, terminal打开这个路径后运行download.sh文件: <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">cd</span> ./llama-models/models/llama3_1 <span class="hljs-comment"># 进入llama3.1模型路径</span><br>./download.sh <span class="hljs-comment"># 运行.sh文件</span><br></code></pre></td></tr></table></figure></li>
+<li>运行sh文件后, 首先会让你输入申请获得的url: ‘Enter the URL from email’. 你把邮件中的url复制到这里, 回车.<br>然后会有一个model list供你选择, 选择自己想要下载的<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs vim"> **** Model <span class="hljs-keyword">list</span> ***<br> -  meta-llama-<span class="hljs-number">3.1</span>-<span class="hljs-number">405</span><span class="hljs-keyword">b</span><br> -  meta-llama-<span class="hljs-number">3.1</span>-<span class="hljs-number">70</span><span class="hljs-keyword">b</span><br> -  meta-llama-<span class="hljs-number">3.1</span>-<span class="hljs-number">8</span><span class="hljs-keyword">b</span><br> -  meta-llama-guard-<span class="hljs-number">3</span>-<span class="hljs-number">8</span><span class="hljs-keyword">b</span><br> -  prompt-guard<br>Choose the model <span class="hljs-keyword">to</span> download: meta-llama-<span class="hljs-number">3.1</span>-<span class="hljs-number">8</span><span class="hljs-keyword">b</span><br><br> Selected model: meta-llama-<span class="hljs-number">3.1</span>-<span class="hljs-number">8</span><span class="hljs-keyword">b</span> <br><br> **** Available models <span class="hljs-keyword">to</span> download: ***<br> -  meta-llama-<span class="hljs-number">3.1</span>-<span class="hljs-number">8</span><span class="hljs-keyword">b</span>-instruct<br> -  meta-llama-<span class="hljs-number">3.1</span>-<span class="hljs-number">8</span><span class="hljs-keyword">b</span><br>Enter the <span class="hljs-keyword">list</span> of models <span class="hljs-keyword">to</span> download without spaces <span class="hljs-built_in">or</span> press Enter <span class="hljs-keyword">for</span> <span class="hljs-keyword">all</span>: meta-llama-<span class="hljs-number">3.1</span>-<span class="hljs-number">8</span><span class="hljs-keyword">b</span><br></code></pre></td></tr></table></figure>
+我选择的都是‘meta-llama-3.1-8b’模型(大概有15G), 选择完毕后他会慢慢下载, 你会发现本地文件夹多了一个‘Meta-Llama-3.1-8B’文件夹, 里面有两个文件: tokenizer.model和.pth文件, 就是tokenizer模型和权重参数文件.</li>
+</ol>
+<h2 id="benchmark评估"><a href="#benchmark评估" class="headerlink" title="benchmark评估"></a>benchmark评估</h2><p>这里, 我使用lm-evaluate-harness工具复现llama3.1的部分evaluation数据, <a target="_blank" rel="noopener" href="https://github.com/EleutherAI/lm-evaluation-harness/tree/main">GitHub</a>.</p>
+<h3 id="1-lm-eval-harness创建环境"><a href="#1-lm-eval-harness创建环境" class="headerlink" title="1. lm-eval-harness创建环境"></a>1. lm-eval-harness创建环境</h3><p>首先使用conda创建一个新的环境, 在这个环境下安装lm-eval-harness. 从github下载lm-eval-harness, 并下载所需的库. 代码如下:<br><figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs vim">conda create --name lm_eval <span class="hljs-keyword">python</span>=<span class="hljs-number">3.10</span><br>conda activate lm_eval<br>git clone https://github.<span class="hljs-keyword">com</span>/EleutherAI/<span class="hljs-keyword">lm</span>-evaluation-harness<br><span class="hljs-keyword">cd</span> <span class="hljs-keyword">lm</span>-evaluation-harness<br>pip install -<span class="hljs-keyword">e</span> .<br></code></pre></td></tr></table></figure></p>
+<p>然后查看lm-eval上的所有tasks列表:<br><figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs vim">! <span class="hljs-keyword">lm</span>-<span class="hljs-built_in">eval</span> --tasks <span class="hljs-keyword">list</span><br></code></pre></td></tr></table></figure></p>
+<p>这个task list有很长, 一部分是task输出, 一部分是group输出. 一个group可能包含多个task. 下面我只列出group列表. 后续lm-eval命令的—tasks参数指定下面group list中的一个或者多个任务.<br><figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><code class="hljs gherkin">|<span class="hljs-string">              Group              </span>|<span class="hljs-string">                            Config Location                             </span>|<br>|<span class="hljs-string">---------------------------------</span>|<span class="hljs-string">------------------------------------------------------------------------</span>|<br>|<span class="hljs-string">aclue                            </span>|<span class="hljs-string">lm_eval/tasks/aclue/_aclue.yaml                                         </span>|<br>|<span class="hljs-string">aexams                           </span>|<span class="hljs-string">lm_eval/tasks/aexams/_aexams.yaml                                       </span>|<br>|<span class="hljs-string">agieval                          </span>|<span class="hljs-string">lm_eval/tasks/agieval/agieval.yaml                                      </span>|<br>|<span class="hljs-string">agieval_cn                       </span>|<span class="hljs-string">lm_eval/tasks/agieval/agieval_cn.yaml                                   </span>|<br>|<span class="hljs-string">agieval_en                       </span>|<span class="hljs-string">lm_eval/tasks/agieval/agieval_en.yaml                                   </span>|<br>|<span class="hljs-string">agieval_nous                     </span>|<span class="hljs-string">lm_eval/tasks/agieval/agieval_nous.yaml                                 </span>|<br>|<span class="hljs-string">arabicmmlu                       </span>|<span class="hljs-string">lm_eval/tasks/arabicmmlu/_arabicmmlu.yaml                               </span>|<br>|<span class="hljs-string">arabicmmlu_humanities            </span>|<span class="hljs-string">lm_eval/tasks/arabicmmlu/_arabicmmlu_humanities.yaml                    </span>|<br>|<span class="hljs-string">arabicmmlu_language              </span>|<span class="hljs-string">lm_eval/tasks/arabicmmlu/_arabicmmlu_language.yaml                      </span>|<br>|<span class="hljs-string">arabicmmlu_other                 </span>|<span class="hljs-string">lm_eval/tasks/arabicmmlu/_arabicmmlu_other.yaml                         </span>|<br>|<span class="hljs-string">arabicmmlu_social_science        </span>|<span class="hljs-string">lm_eval/tasks/arabicmmlu/_arabicmmlu_social_science.yaml                </span>|<br>|<span class="hljs-string">arabicmmlu_stem                  </span>|<span class="hljs-string">lm_eval/tasks/arabicmmlu/_arabicmmlu_stem.yaml                          </span>|<br>|<span class="hljs-string">bbh                              </span>|<span class="hljs-string">lm_eval/tasks/bbh/cot_fewshot/_bbh.yaml                                 </span>|<br>|<span class="hljs-string">bbh_cot_fewshot                  </span>|<span class="hljs-string">lm_eval/tasks/bbh/cot_fewshot/_bbh_cot_fewshot.yaml                     </span>|<br>|<span class="hljs-string">bbh_cot_zeroshot                 </span>|<span class="hljs-string">lm_eval/tasks/bbh/cot_zeroshot/_bbh_cot_zeroshot.yaml                   </span>|<br>|<span class="hljs-string">bbh_fewshot                      </span>|<span class="hljs-string">lm_eval/tasks/bbh/fewshot/_bbh_fewshot.yaml                             </span>|<br>|<span class="hljs-string">bbh_zeroshot                     </span>|<span class="hljs-string">lm_eval/tasks/bbh/zeroshot/_bbh_zeroshot.yaml                           </span>|<br>|<span class="hljs-string">belebele                         </span>|<span class="hljs-string">lm_eval/tasks/belebele/_belebele.yaml                                   </span>|<br>|<span class="hljs-string">blimp                            </span>|<span class="hljs-string">lm_eval/tasks/blimp/_blimp.yaml                                         </span>|<br>|<span class="hljs-string">ceval-valid                      </span>|<span class="hljs-string">lm_eval/tasks/ceval/_ceval-valid.yaml                                   </span>|<br>|<span class="hljs-string">cmmlu                            </span>|<span class="hljs-string">lm_eval/tasks/cmmlu/_cmmlu.yaml                                         </span>|<br>|<span class="hljs-string">csatqa                           </span>|<span class="hljs-string">lm_eval/tasks/csatqa/_csatqa.yaml                                       </span>|<br>|<span class="hljs-string">flan_held_in                     </span>|<span class="hljs-string">lm_eval/tasks/benchmarks/flan/flan_held_in.yaml                         </span>|<br>|<span class="hljs-string">flan_held_out                    </span>|<span class="hljs-string">lm_eval/tasks/benchmarks/flan/flan_held_out.yaml                        </span>|<br>|<span class="hljs-string">haerae                           </span>|<span class="hljs-string">lm_eval/tasks/haerae/_haerae.yaml                                       </span>|<br>|<span class="hljs-string">hendrycks_math                   </span>|<span class="hljs-string">lm_eval/tasks/hendrycks_math/hendrycks_math.yaml                        </span>|<br>|<span class="hljs-string">kormedmcqa                       </span>|<span class="hljs-string">lm_eval/tasks/kormedmcqa/_kormedmcqa.yaml                               </span>|<br>|<span class="hljs-string">leaderboard                      </span>|<span class="hljs-string">lm_eval/tasks/leaderboard/leaderboard.yaml                              </span>|<br>|<span class="hljs-string">leaderboard_bbh                  </span>|<span class="hljs-string">lm_eval/tasks/leaderboard/bbh_mc/_leaderboard_bbh.yaml                  </span>|<br>|<span class="hljs-string">leaderboard_gpqa                 </span>|<span class="hljs-string">lm_eval/tasks/leaderboard/gpqa/_leaderboard_gpqa.yaml                   </span>|<br>|<span class="hljs-string">leaderboard_instruction_following</span>|<span class="hljs-string">lm_eval/tasks/leaderboard/ifeval/_leaderboard_instruction_following.yaml</span>|<br>|<span class="hljs-string">leaderboard_math_hard            </span>|<span class="hljs-string">lm_eval/tasks/leaderboard/math/_leaderboard_math.yaml                   </span>|<br>|<span class="hljs-string">leaderboard_musr                 </span>|<span class="hljs-string">lm_eval/tasks/leaderboard/musr/_musr.yaml                               </span>|<br>|<span class="hljs-string">med_concepts_qa                  </span>|<span class="hljs-string">lm_eval/tasks/med_concepts_qa/_med_concepts_qa.yaml                     </span>|<br>|<span class="hljs-string">med_concepts_qa_atc              </span>|<span class="hljs-string">lm_eval/tasks/med_concepts_qa/_med_concepts_qa_atc.yaml                 </span>|<br>|<span class="hljs-string">med_concepts_qa_icd10cm          </span>|<span class="hljs-string">lm_eval/tasks/med_concepts_qa/_med_concepts_qa_icd10cm.yaml             </span>|<br>|<span class="hljs-string">med_concepts_qa_icd10proc        </span>|<span class="hljs-string">lm_eval/tasks/med_concepts_qa/_med_concepts_qa_icd10proc.yaml           </span>|<br>|<span class="hljs-string">med_concepts_qa_icd9cm           </span>|<span class="hljs-string">lm_eval/tasks/med_concepts_qa/_med_concepts_qa_icd9cm.yaml              </span>|<br>|<span class="hljs-string">med_concepts_qa_icd9proc         </span>|<span class="hljs-string">lm_eval/tasks/med_concepts_qa/_med_concepts_qa_icd9proc.yaml            </span>|<br>|<span class="hljs-string">minerva_math                     </span>|<span class="hljs-string">lm_eval/tasks/benchmarks/minerva_math.yaml                              </span>|<br>|<span class="hljs-string">mmlu                             </span>|<span class="hljs-string">lm_eval/tasks/mmlu/default/_mmlu.yaml                                   </span>|<br>|<span class="hljs-string">mmlu_continuation                </span>|<span class="hljs-string">lm_eval/tasks/mmlu/continuation/_mmlu.yaml                              </span>|<br>|<span class="hljs-string">mmlu_flan_cot_fewshot            </span>|<span class="hljs-string">lm_eval/tasks/mmlu/flan_cot_fewshot/_mmlu.yaml                          </span>|<br>|<span class="hljs-string">mmlu_flan_cot_zeroshot           </span>|<span class="hljs-string">lm_eval/tasks/mmlu/flan_cot_zeroshot/_mmlu.yaml                         </span>|<br>|<span class="hljs-string">mmlu_flan_n_shot_generative      </span>|<span class="hljs-string">lm_eval/tasks/mmlu/flan_n_shot/generative/_mmlu.yaml                    </span>|<br>|<span class="hljs-string">mmlu_flan_n_shot_loglikelihood   </span>|<span class="hljs-string">lm_eval/tasks/mmlu/flan_n_shot/loglikelihood/_mmlu.yaml                 </span>|<br>|<span class="hljs-string">mmlu_generative                  </span>|<span class="hljs-string">lm_eval/tasks/mmlu/generative/_mmlu.yaml                                </span>|<br>|<span class="hljs-string">mmlu_humanities                  </span>|<span class="hljs-string">lm_eval/tasks/mmlu/default/_mmlu_humanities.yaml                        </span>|<br>|<span class="hljs-string">mmlu_other                       </span>|<span class="hljs-string">lm_eval/tasks/mmlu/default/_mmlu_other.yaml                             </span>|<br>|<span class="hljs-string">mmlu_social_sciences             </span>|<span class="hljs-string">lm_eval/tasks/mmlu/default/_mmlu_social_sciences.yaml                   </span>|<br>|<span class="hljs-string">mmlu_stem                        </span>|<span class="hljs-string">lm_eval/tasks/mmlu/default/_mmlu_stem.yaml                              </span>|<br>|<span class="hljs-string">mmlusr                           </span>|<span class="hljs-string">lm_eval/tasks/mmlusr/question_and_answer/_question_and_answer.yaml      </span>|<br>|<span class="hljs-string">mmlusr_answer_only               </span>|<span class="hljs-string">lm_eval/tasks/mmlusr/answer_only/_answer_only.yaml                      </span>|<br>|<span class="hljs-string">mmlusr_question_only             </span>|<span class="hljs-string">lm_eval/tasks/mmlusr/question_only/_question_only.yaml                  </span>|<br>|<span class="hljs-string">multimedqa                       </span>|<span class="hljs-string">lm_eval/tasks/benchmarks/multimedqa/multimedqa.yaml                     </span>|<br>|<span class="hljs-string">openllm                          </span>|<span class="hljs-string">lm_eval/tasks/benchmarks/openllm.yaml                                   </span>|<br>|<span class="hljs-string">pawsx                            </span>|<span class="hljs-string">lm_eval/tasks/paws-x/_pawsx.yaml                                        </span>|<br>|<span class="hljs-string">pythia                           </span>|<span class="hljs-string">lm_eval/tasks/benchmarks/pythia.yaml                                    </span>|<br>|<span class="hljs-string">t0_eval                          </span>|<span class="hljs-string">lm_eval/tasks/benchmarks/t0_eval.yaml                                   </span>|<br>|<span class="hljs-string">tinyBenchmarks                   </span>|<span class="hljs-string">lm_eval/tasks/tinyBenchmarks/tinyBenchmarks.yaml                        </span>|<br>|<span class="hljs-string">tmmluplus                        </span>|<span class="hljs-string">lm_eval/tasks/tmmluplus/default/tmmluplus.yaml                          </span>|<br>|<span class="hljs-string">wmdp                             </span>|<span class="hljs-string">lm_eval/tasks/wmdp/_wmdp.yaml                                           </span>|<br>|<span class="hljs-string">xcopa                            </span>|<span class="hljs-string">lm_eval/tasks/xcopa/_xcopa.yaml                                         </span>|<br>|<span class="hljs-string">xnli                             </span>|<span class="hljs-string">lm_eval/tasks/xnli/_xnli.yaml                                           </span>|<br>|<span class="hljs-string">xstorycloze                      </span>|<span class="hljs-string">lm_eval/tasks/xstorycloze/_xstorycloze.yaml                             </span>|<br>|<span class="hljs-string">xwinograd                        </span>|<span class="hljs-string">lm_eval/tasks/xwinograd/_xwinograd.yaml                                 </span>|<br><br></code></pre></td></tr></table></figure></p>
+<h3 id="2-登陆自己的huggingface"><a href="#2-登陆自己的huggingface" class="headerlink" title="2. 登陆自己的huggingface"></a>2. 登陆自己的huggingface</h3><p>安装好lm-eval环境后, 先使用hf-token在terminal登陆自己的huggingface:<br><figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs pgsql">pip install huggingface-hub <br>huggingface-cli <span class="hljs-keyword">login</span> <span class="hljs-comment">--token your_own_huggingface_token_string</span><br></code></pre></td></tr></table></figure></p>
+<h3 id="3-开始评测"><a href="#3-开始评测" class="headerlink" title="3. 开始评测"></a>3. 开始评测</h3><p>lm_eval的常见参数:<br><figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli"><span class="hljs-params">--model</span> &#123;调用模型的方式, 我使用的huggingface: <span class="hljs-params">--model</span> hf, 也可以用其他方式, 具体看官方github.&#125; <br><span class="hljs-params">--model_args</span> pretrained=&#123;这里是huggingface的模型路径&#125;<br><span class="hljs-params">--tasks</span> &#123;指定任务, 多个任务用逗号分隔, 注意逗号后面不要带空格&#125;<br><span class="hljs-params">--device</span> &#123;指定使用哪个device, e.g. cuda<span class="hljs-function">:0</span>, 注意冒号后面没有空格&#125;<br><span class="hljs-params">--batch_size</span> &#123;指定<span class="hljs-keyword">batch</span>_size&#125;<br><span class="hljs-params">--output_path</span> &#123;指定模型评测结果的输出路径, 会在该路径下保存evaluation结果的json文件.&#125;<br><span class="hljs-params">--use_cache</span> &#123;模型eval结果缓存, 生成一个db文件. 指定use_cache后, 如果这个路径下有上一次保存的cache, 会紧接着上一次的运行, 不用从头开始. <br>    注意, use_cache是路径+文件名前缀. e.g. 如果<span class="hljs-params">--use_cache</span> <span class="hljs-string">./eval_cache/llama_eval_cache</span>, 会生成一个<span class="hljs-string">./eval_cache/llama_eval_cache_rank0.db</span>文件.&#125;<br></code></pre></td></tr></table></figure></p>
+<p>下面给出llama3.1-8b用lm-eval-harness测评的几个代码示例, 都是直接在terminal输入: </p>
+<p><strong>mmlu任务, shot=0和shot=5</strong><br><figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli">lm_eval <span class="hljs-params">--model</span> hf \<br>    <span class="hljs-params">--model_args</span> pretrained=meta-llama/Meta-Llama-3.1-8B,trust_remote_code=<span class="hljs-literal">true</span> \<br>    <span class="hljs-params">--tasks</span> mmlu \<br>    <span class="hljs-params">--device</span> cuda<span class="hljs-function">:2</span> \<br>    <span class="hljs-params">--batch_size</span> auto<span class="hljs-function">:1</span> \<br>    <span class="hljs-params">--output_path</span> <span class="hljs-string">./harness_eval_output</span> \<br>    <span class="hljs-params">--use_cache</span> <span class="hljs-string">./harness_eval_cache/Meta-Llama-3.1-8B/llama_eval_cache</span><br></code></pre></td></tr></table></figure></p>
+<figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli">lm_eval <span class="hljs-params">--model</span> hf \<br>    <span class="hljs-params">--model_args</span> pretrained=meta-llama/Meta-Llama-3.1-8B,trust_remote_code=<span class="hljs-literal">true</span> \<br>    <span class="hljs-params">--tasks</span> mmlu \<br>    <span class="hljs-params">--device</span> cuda<span class="hljs-function">:2</span> \<br>    <span class="hljs-params">--num_fewshot</span> 5 \<br>    <span class="hljs-params">--batch_size</span> auto \<br>    <span class="hljs-params">--output_path</span> <span class="hljs-string">./harness_eval_output</span> \<br>    <span class="hljs-params">--use_cache</span> <span class="hljs-string">./harness_eval_cache/Meta-Llama-3.1-8B/llama_eval_cache</span><br></code></pre></td></tr></table></figure>
+<p>输出结果形如这样:<br><figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><code class="hljs gherkin">|<span class="hljs-string">                 Tasks                 </span>|<span class="hljs-string">Version</span>|<span class="hljs-string">Filter</span>|<span class="hljs-string">n-shot</span>|<span class="hljs-string">Metric</span>|<span class="hljs-string">   </span>|<span class="hljs-string">Value </span>|<span class="hljs-string">   </span>|<span class="hljs-string">Stderr</span>|<br>|<span class="hljs-string">---------------------------------------</span>|<span class="hljs-string">------:</span>|<span class="hljs-string">------</span>|<span class="hljs-string">-----:</span>|<span class="hljs-string">------</span>|<span class="hljs-string">---</span>|<span class="hljs-string">-----:</span>|<span class="hljs-string">---</span>|<span class="hljs-string">-----:</span>|<br>|<span class="hljs-string">mmlu                                   </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">      </span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.6320</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0038</span>|<br>|<span class="hljs-string"> - humanities                          </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">      </span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.5677</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0066</span>|<br>|<span class="hljs-string">  - formal_logic                       </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.4365</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0444</span>|<br>|<span class="hljs-string">  - high_school_european_history       </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7636</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0332</span>|<br>|<span class="hljs-string">  - high_school_us_history             </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.8284</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0265</span>|<br>|<span class="hljs-string">  - high_school_world_history          </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.8397</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0239</span>|<br>|<span class="hljs-string">  - international_law                  </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.8264</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0346</span>|<br>|<span class="hljs-string">  - jurisprudence                      </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7130</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0437</span>|<br>|<span class="hljs-string">  - logical_fallacies                  </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7730</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0329</span>|<br>|<span class="hljs-string">  - moral_disputes                     </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7081</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0245</span>|<br>|<span class="hljs-string">  - moral_scenarios                    </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.2425</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0143</span>|<br>|<span class="hljs-string">  - philosophy                         </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7267</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0253</span>|<br>|<span class="hljs-string">  - prehistory                         </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7130</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0252</span>|<br>|<span class="hljs-string">  - professional_law                   </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.4935</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0128</span>|<br>|<span class="hljs-string">  - world_religions                    </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.8363</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0284</span>|<br>|<span class="hljs-string"> - other                               </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">      </span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7081</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0078</span>|<br>|<span class="hljs-string">  - business_ethics                    </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.6000</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0492</span>|<br>|<span class="hljs-string">  - clinical_knowledge                 </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7245</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0275</span>|<br>|<span class="hljs-string">  - college_medicine                   </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.6069</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0372</span>|<br>|<span class="hljs-string">  - global_facts                       </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.3300</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0473</span>|<br>|<span class="hljs-string">  - human_aging                        </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.6726</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0315</span>|<br>|<span class="hljs-string">  - management                         </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.8252</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0376</span>|<br>|<span class="hljs-string">  - marketing                          </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.8761</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0216</span>|<br>|<span class="hljs-string">  - medical_genetics                   </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.8400</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0368</span>|<br>|<span class="hljs-string">  - miscellaneous                      </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.8161</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0139</span>|<br>|<span class="hljs-string">  - nutrition                          </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7549</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0246</span>|<br>|<span class="hljs-string">  - professional_accounting            </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.4929</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0298</span>|<br>|<span class="hljs-string">  - professional_medicine              </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.6949</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0280</span>|<br>|<span class="hljs-string">  - virology                           </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.5301</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0389</span>|<br>|<span class="hljs-string"> - social sciences                     </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">      </span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7400</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0077</span>|<br>|<span class="hljs-string">  - econometrics                       </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.4649</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0469</span>|<br>|<span class="hljs-string">  - high_school_geography              </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7879</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0291</span>|<br>|<span class="hljs-string">  - high_school_government_and_politics</span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.8705</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0242</span>|<br>|<span class="hljs-string">  - high_school_macroeconomics         </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.6256</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0245</span>|<br>|<span class="hljs-string">  - high_school_microeconomics         </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.6891</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0301</span>|<br>|<span class="hljs-string">  - high_school_psychology             </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.8330</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0160</span>|<br>|<span class="hljs-string">  - human_sexuality                    </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7328</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0388</span>|<br>|<span class="hljs-string">  - professional_psychology            </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7108</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0183</span>|<br>|<span class="hljs-string">  - public_relations                   </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7091</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0435</span>|<br>|<span class="hljs-string">  - security_studies                   </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7265</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0285</span>|<br>|<span class="hljs-string">  - sociology                          </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.8259</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0268</span>|<br>|<span class="hljs-string">  - us_foreign_policy                  </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.8500</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0359</span>|<br>|<span class="hljs-string"> - stem                                </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">      </span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.5474</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0085</span>|<br>|<span class="hljs-string">  - abstract_algebra                   </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.3500</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0479</span>|<br>|<span class="hljs-string">  - anatomy                            </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.6444</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0414</span>|<br>|<span class="hljs-string">  - astronomy                          </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7237</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0364</span>|<br>|<span class="hljs-string">  - college_biology                    </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7778</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0348</span>|<br>|<span class="hljs-string">  - college_chemistry                  </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.4500</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0500</span>|<br>|<span class="hljs-string">  - college_computer_science           </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.5700</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0498</span>|<br>|<span class="hljs-string">  - college_mathematics                </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.3900</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0490</span>|<br>|<span class="hljs-string">  - college_physics                    </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.4216</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0491</span>|<br>|<span class="hljs-string">  - computer_security                  </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7800</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0416</span>|<br>|<span class="hljs-string">  - conceptual_physics                 </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.5064</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0327</span>|<br>|<span class="hljs-string">  - electrical_engineering             </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.5862</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0410</span>|<br>|<span class="hljs-string">  - elementary_mathematics             </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.4471</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0256</span>|<br>|<span class="hljs-string">  - high_school_biology                </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7645</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0241</span>|<br>|<span class="hljs-string">  - high_school_chemistry              </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.5567</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0350</span>|<br>|<span class="hljs-string">  - high_school_computer_science       </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.6400</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0482</span>|<br>|<span class="hljs-string">  - high_school_mathematics            </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.4148</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0300</span>|<br>|<span class="hljs-string">  - high_school_physics                </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.4305</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0404</span>|<br>|<span class="hljs-string">  - high_school_statistics             </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.5370</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0340</span>|<br>|<span class="hljs-string">  - machine_learning                   </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.3571</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0455</span>|<br><br>|<span class="hljs-string">      Groups      </span>|<span class="hljs-string">Version</span>|<span class="hljs-string">Filter</span>|<span class="hljs-string">n-shot</span>|<span class="hljs-string">Metric</span>|<span class="hljs-string">   </span>|<span class="hljs-string">Value </span>|<span class="hljs-string">   </span>|<span class="hljs-string">Stderr</span>|<br>|<span class="hljs-string">------------------</span>|<span class="hljs-string">------:</span>|<span class="hljs-string">------</span>|<span class="hljs-string">------</span>|<span class="hljs-string">------</span>|<span class="hljs-string">---</span>|<span class="hljs-string">-----:</span>|<span class="hljs-string">---</span>|<span class="hljs-string">-----:</span>|<br>|<span class="hljs-string">mmlu              </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">      </span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.6320</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0038</span>|<br>|<span class="hljs-string"> - humanities     </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">      </span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.5677</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0066</span>|<br>|<span class="hljs-string"> - other          </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">      </span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7081</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0078</span>|<br>|<span class="hljs-string"> - social sciences</span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">      </span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7400</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0077</span>|<br>|<span class="hljs-string"> - stem           </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">      </span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.5474</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0085</span>|<br></code></pre></td></tr></table></figure></p>
+<p><strong>task=leaderboard_bbh, shot=3</strong><br><figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli">lm_eval <span class="hljs-params">--model</span> hf \<br>    <span class="hljs-params">--model_args</span> pretrained=meta-llama/Meta-Llama-3.1-8B,trust_remote_code=<span class="hljs-literal">true</span> \<br>    <span class="hljs-params">--tasks</span> leaderboard_bbh  \<br>    <span class="hljs-params">--device</span> cuda<span class="hljs-function">:3</span> \<br>    <span class="hljs-params">--num_fewshot</span> 3 \<br>    <span class="hljs-params">--batch_size</span> auto \<br>    <span class="hljs-params">--output_path</span> <span class="hljs-string">./harness_eval_output</span> \<br>    <span class="hljs-params">--use_cache</span> <span class="hljs-string">./harness_eval_cache/Meta-Llama-3.1-8B/llama_eval_cache</span><br></code></pre></td></tr></table></figure></p>
+<p>输出结果形如:<br><figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs gherkin">|<span class="hljs-string">                          Tasks                           </span>|<span class="hljs-string">Version</span>|<span class="hljs-string">Filter</span>|<span class="hljs-string">n-shot</span>|<span class="hljs-string"> Metric </span>|<span class="hljs-string">   </span>|<span class="hljs-string">Value </span>|<span class="hljs-string">   </span>|<span class="hljs-string">Stderr</span>|<br>|<span class="hljs-string">----------------------------------------------------------</span>|<span class="hljs-string">-------</span>|<span class="hljs-string">------</span>|<span class="hljs-string">-----:</span>|<span class="hljs-string">--------</span>|<span class="hljs-string">---</span>|<span class="hljs-string">-----:</span>|<span class="hljs-string">---</span>|<span class="hljs-string">-----:</span>|<br>|<span class="hljs-string">leaderboard_bbh                                           </span>|<span class="hljs-string">    N/A</span>|<span class="hljs-string">      </span>|<span class="hljs-string">      </span>|<span class="hljs-string">        </span>|<span class="hljs-string">   </span>|<span class="hljs-string">      </span>|<span class="hljs-string">   </span>|<span class="hljs-string">      </span>|<br>|<span class="hljs-string"> - leaderboard_bbh_boolean_expressions                    </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.8000</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0253</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_causal_judgement                       </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.5668</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0363</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_date_understanding                     </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.5000</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0317</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_disambiguation_qa                      </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.5160</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0317</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_formal_fallacies                       </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.5680</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0314</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_geometric_shapes                       </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.3400</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0300</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_hyperbaton                             </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.6000</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0310</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_logical_deduction_five_objects         </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.3600</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0304</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_logical_deduction_seven_objects        </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.3320</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0298</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_logical_deduction_three_objects        </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.5160</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0317</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_movie_recommendation                   </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.8080</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0250</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_navigate                               </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.4960</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0317</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_object_counting                        </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.4920</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0317</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_penguins_in_a_table                    </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.4384</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0412</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_reasoning_about_colored_objects        </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.3760</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0307</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_ruin_names                             </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.5240</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0316</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_salient_translation_error_detection    </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.4040</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0311</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_snarks                                 </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.6236</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0364</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_sports_understanding                   </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.7400</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0278</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_temporal_sequences                     </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.0840</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0176</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_tracking_shuffled_objects_five_objects </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.1480</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0225</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_tracking_shuffled_objects_seven_objects</span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.1160</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0203</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_tracking_shuffled_objects_three_objects</span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.3480</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0302</span>|<br>|<span class="hljs-string"> - leaderboard_bbh_web_of_lies                            </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.4880</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0317</span>|<br><br></code></pre></td></tr></table></figure></p>
+<p><strong>task=agieval_en, shot=3</strong></p>
+<figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli">lm_eval <span class="hljs-params">--model</span> hf \<br>    <span class="hljs-params">--model_args</span> pretrained=meta-llama/Meta-Llama-3.1-8B,trust_remote_code=<span class="hljs-literal">true</span> \<br>    <span class="hljs-params">--tasks</span> agieval_en  \<br>    <span class="hljs-params">--device</span> cuda<span class="hljs-function">:2</span> \<br>    <span class="hljs-params">--num_fewshot</span> 3 \<br>    <span class="hljs-params">--batch_size</span> auto \<br>    <span class="hljs-params">--output_path</span> <span class="hljs-string">./harness_eval_output</span> \<br>    <span class="hljs-params">--use_cache</span> <span class="hljs-string">./harness_eval_cache/Meta-Llama-3.1-8B/llama_eval_cache</span><br></code></pre></td></tr></table></figure>
+<p>结果形如:<br><figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs gherkin">|<span class="hljs-string">              Tasks              </span>|<span class="hljs-string">Version</span>|<span class="hljs-string">Filter</span>|<span class="hljs-string">n-shot</span>|<span class="hljs-string"> Metric </span>|<span class="hljs-string">   </span>|<span class="hljs-string">Value </span>|<span class="hljs-string">   </span>|<span class="hljs-string">Stderr</span>|<br>|<span class="hljs-string">---------------------------------</span>|<span class="hljs-string">------:</span>|<span class="hljs-string">------</span>|<span class="hljs-string">-----:</span>|<span class="hljs-string">--------</span>|<span class="hljs-string">---</span>|<span class="hljs-string">-----:</span>|<span class="hljs-string">---</span>|<span class="hljs-string">-----:</span>|<br>|<span class="hljs-string">agieval_en                       </span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">      </span>|<span class="hljs-string">acc     </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.3141</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0071</span>|<br>|<span class="hljs-string"> - agieval_aqua_rat              </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc     </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.2244</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0262</span>|<br>|<span class="hljs-string">                                 </span>|<span class="hljs-string">       </span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.2244</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0262</span>|<br>|<span class="hljs-string"> - agieval_gaokao_english        </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc     </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.5752</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0283</span>|<br>|<span class="hljs-string">                                 </span>|<span class="hljs-string">       </span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.5065</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0286</span>|<br>|<span class="hljs-string"> - agieval_logiqa_en             </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc     </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.3011</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0180</span>|<br>|<span class="hljs-string">                                 </span>|<span class="hljs-string">       </span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.3011</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0180</span>|<br>|<span class="hljs-string"> - agieval_lsat_ar               </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc     </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.2043</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0266</span>|<br>|<span class="hljs-string">                                 </span>|<span class="hljs-string">       </span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.1826</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0255</span>|<br>|<span class="hljs-string"> - agieval_lsat_lr               </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc     </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.3569</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0212</span>|<br>|<span class="hljs-string">                                 </span>|<span class="hljs-string">       </span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.2569</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0194</span>|<br>|<span class="hljs-string"> - agieval_lsat_rc               </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc     </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.5242</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0305</span>|<br>|<span class="hljs-string">                                 </span>|<span class="hljs-string">       </span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.3123</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0283</span>|<br>|<span class="hljs-string"> - agieval_math                  </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc     </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.1490</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0113</span>|<br>|<span class="hljs-string"> - agieval_sat_en                </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc     </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.5146</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0349</span>|<br>|<span class="hljs-string">                                 </span>|<span class="hljs-string">       </span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.3058</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0322</span>|<br>|<span class="hljs-string"> - agieval_sat_en_without_passage</span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc     </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.3835</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0340</span>|<br>|<span class="hljs-string">                                 </span>|<span class="hljs-string">       </span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.2767</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0312</span>|<br>|<span class="hljs-string"> - agieval_sat_math              </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc     </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.3500</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0322</span>|<br>|<span class="hljs-string">                                 </span>|<span class="hljs-string">       </span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     3</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.2818</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0304</span>|<br><br>|<span class="hljs-string">  Groups  </span>|<span class="hljs-string">Version</span>|<span class="hljs-string">Filter</span>|<span class="hljs-string">n-shot</span>|<span class="hljs-string">Metric</span>|<span class="hljs-string">   </span>|<span class="hljs-string">Value </span>|<span class="hljs-string">   </span>|<span class="hljs-string">Stderr</span>|<br>|<span class="hljs-string">----------</span>|<span class="hljs-string">------:</span>|<span class="hljs-string">------</span>|<span class="hljs-string">------</span>|<span class="hljs-string">------</span>|<span class="hljs-string">---</span>|<span class="hljs-string">-----:</span>|<span class="hljs-string">---</span>|<span class="hljs-string">-----:</span>|<br>|<span class="hljs-string">agieval_en</span>|<span class="hljs-string">      0</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">      </span>|<span class="hljs-string">acc   </span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.3141</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0071</span>|<br></code></pre></td></tr></table></figure></p>
+<h4 id="parallelize-True-多GPU"><a href="#parallelize-True-多GPU" class="headerlink" title="parallelize=True 多GPU"></a>parallelize=True 多GPU</h4><p><strong>llama3.1-8b-instruct, task=leaderboard_gpqa, shot=0</strong><br>这个任务如果使用下面代码, 因为一个GPU放不下, 数据太多, 会报错‘torch.OutOfMemoryError: CUDA out of memory.’:<br><figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli">lm_eval <span class="hljs-params">--model</span> hf \<br>    <span class="hljs-params">--model_args</span> pretrained=meta-llama/Meta-Llama-3.1-8B-Instruct,trust_remote_code=<span class="hljs-literal">true</span> \<br>    <span class="hljs-params">--tasks</span> leaderboard_gpqa  \<br>    <span class="hljs-params">--device</span> cuda<span class="hljs-function">:2</span> \<br>    <span class="hljs-params">--batch_size</span> auto \<br>    <span class="hljs-params">--output_path</span> <span class="hljs-string">./harness_eval_output</span> \<br>    <span class="hljs-params">--use_cache</span> <span class="hljs-string">./harness_eval_cache/Meta-Llama-3.1-8B-Instruct/llama_eval_cache</span><br></code></pre></td></tr></table></figure></p>
+<p>可以使用下面代码, 添加parallelize=True(parallelize让数据分布在多个gpu中计算, 尽管下面指定的device只有一个.), 注意model_args后面的三个参数的逗号之间没有空格, 否则会报错:<br><figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli">lm_eval <span class="hljs-params">--model</span> hf \<br>    <span class="hljs-params">--model_args</span> pretrained=meta-llama/Meta-Llama-3.1-8B-Instruct,parallelize=True,trust_remote_code=True \<br>    <span class="hljs-params">--tasks</span> leaderboard_gpqa  \<br>    <span class="hljs-params">--batch_size</span> auto \<br>    <span class="hljs-params">--device</span> cuda<span class="hljs-function">:2</span> \<br>    <span class="hljs-params">--output_path</span> <span class="hljs-string">./harness_eval_output</span> \<br>    <span class="hljs-params">--use_cache</span> <span class="hljs-string">./harness_eval_cache/Meta-Llama-3.1-8B-Instruct/llama_eval_cache</span><br></code></pre></td></tr></table></figure></p>
+<p>输出结果:<br><figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs gherkin">|<span class="hljs-string">           Tasks            </span>|<span class="hljs-string">Version</span>|<span class="hljs-string">Filter</span>|<span class="hljs-string">n-shot</span>|<span class="hljs-string"> Metric </span>|<span class="hljs-string">   </span>|<span class="hljs-string">Value </span>|<span class="hljs-string">   </span>|<span class="hljs-string">Stderr</span>|<br>|<span class="hljs-string">----------------------------</span>|<span class="hljs-string">-------</span>|<span class="hljs-string">------</span>|<span class="hljs-string">-----:</span>|<span class="hljs-string">--------</span>|<span class="hljs-string">---</span>|<span class="hljs-string">-----:</span>|<span class="hljs-string">---</span>|<span class="hljs-string">-----:</span>|<br>|<span class="hljs-string">leaderboard_gpqa            </span>|<span class="hljs-string">    N/A</span>|<span class="hljs-string">      </span>|<span class="hljs-string">      </span>|<span class="hljs-string">        </span>|<span class="hljs-string">   </span>|<span class="hljs-string">      </span>|<span class="hljs-string">   </span>|<span class="hljs-string">      </span>|<br>|<span class="hljs-string"> - leaderboard_gpqa_diamond </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.3182</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0332</span>|<br>|<span class="hljs-string"> - leaderboard_gpqa_extended</span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.3095</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0198</span>|<br>|<span class="hljs-string"> - leaderboard_gpqa_main    </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     0</span>|<span class="hljs-string">acc_norm</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.3438</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0225</span>|<br></code></pre></td></tr></table></figure></p>
+<h4 id="accelerate加速-多GPU"><a href="#accelerate加速-多GPU" class="headerlink" title="accelerate加速, 多GPU"></a>accelerate加速, 多GPU</h4><p><strong>task=leaderboard_math_hard, shot=0</strong><br>对这个任务分别使用原始单个gpu, accelerate加速, 和parallelize=True. </p>
+<p>单个gpu:<br><figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli">lm_eval <span class="hljs-params">--model</span> hf \<br>    <span class="hljs-params">--model_args</span> pretrained=meta-llama/Meta-Llama-3.1-8B-Instruct,trust_remote_code=<span class="hljs-literal">true</span> \<br>    <span class="hljs-params">--tasks</span> leaderboard_math_hard  \<br>    <span class="hljs-params">--device</span> cuda<span class="hljs-function">:1</span> \<br>    <span class="hljs-params">--batch_size</span> auto \<br>    <span class="hljs-params">--output_path</span> <span class="hljs-string">./harness_eval_output</span> \<br>    <span class="hljs-params">--use_cache</span> <span class="hljs-string">./harness_eval_cache/Meta-Llama-3.1-8B-Instruct/llama_eval_cache</span><br></code></pre></td></tr></table></figure></p>
+<p>parallelize=True 多gpu:<br><figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli">lm_eval <span class="hljs-params">--model</span> hf \<br>    <span class="hljs-params">--model_args</span> pretrained=meta-llama/Meta-Llama-3.1-8B-Instruct,parallelize=True,trust_remote_code=True \<br>    <span class="hljs-params">--tasks</span> leaderboard_math_hard  \<br>    <span class="hljs-params">--device</span> cuda<span class="hljs-function">:1</span> \<br>    <span class="hljs-params">--batch_size</span> auto \<br>    <span class="hljs-params">--output_path</span> <span class="hljs-string">./harness_eval_output</span> \<br>    <span class="hljs-params">--use_cache</span> <span class="hljs-string">./harness_eval_cache/Meta-Llama-3.1-8B-Instruct/llama_eval_cache</span><br></code></pre></td></tr></table></figure></p>
+<p>accelerate多gpu:<br>首先创建config.yml文件:<br><figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs arduino">accelerate config<br></code></pre></td></tr></table></figure></p>
+<p>按照步骤填写, gpu-ids如果指定多个gpu, 需要用逗号分开, 不要添加括号. e.g. 0,1,2,3 填写完会保存config.yml文件. 然后运行:<br><figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli">accelerate launch -m lm_eval <span class="hljs-params">--model</span> hf \<br>    <span class="hljs-params">--model_args</span> pretrained=meta-llama/Meta-Llama-3.1-8B-Instruct,trust_remote_code=<span class="hljs-literal">true</span> \<br>    <span class="hljs-params">--tasks</span> leaderboard_math_hard  \<br>    <span class="hljs-params">--batch_size</span> auto \<br>    <span class="hljs-params">--device</span> cuda<span class="hljs-function">:2</span> \<br>    <span class="hljs-params">--output_path</span> <span class="hljs-string">./harness_eval_output</span> \<br>    <span class="hljs-params">--use_cache</span> <span class="hljs-string">./harness_eval_cache/Meta-Llama-3.1-8B-Instruct/llama_eval_cache</span><br></code></pre></td></tr></table></figure></p>
+<p>输出结果:<br><figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs gherkin">|<span class="hljs-string">                    Tasks                    </span>|<span class="hljs-string">Version</span>|<span class="hljs-string">Filter</span>|<span class="hljs-string">n-shot</span>|<span class="hljs-string">  Metric   </span>|<span class="hljs-string">   </span>|<span class="hljs-string">Value </span>|<span class="hljs-string">   </span>|<span class="hljs-string">Stderr</span>|<br>|<span class="hljs-string">---------------------------------------------</span>|<span class="hljs-string">-------</span>|<span class="hljs-string">------</span>|<span class="hljs-string">-----:</span>|<span class="hljs-string">-----------</span>|<span class="hljs-string">---</span>|<span class="hljs-string">-----:</span>|<span class="hljs-string">---</span>|<span class="hljs-string">-----:</span>|<br>|<span class="hljs-string">leaderboard_math_hard                        </span>|<span class="hljs-string">    N/A</span>|<span class="hljs-string">      </span>|<span class="hljs-string">      </span>|<span class="hljs-string">           </span>|<span class="hljs-string">   </span>|<span class="hljs-string">      </span>|<span class="hljs-string">   </span>|<span class="hljs-string">      </span>|<br>|<span class="hljs-string"> - leaderboard_math_algebra_hard             </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     4</span>|<span class="hljs-string">exact_match</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.2606</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0251</span>|<br>|<span class="hljs-string"> - leaderboard_math_counting_and_prob_hard   </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     4</span>|<span class="hljs-string">exact_match</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.0569</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0210</span>|<br>|<span class="hljs-string"> - leaderboard_math_geometry_hard            </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     4</span>|<span class="hljs-string">exact_match</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.0530</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0196</span>|<br>|<span class="hljs-string"> - leaderboard_math_intermediate_algebra_hard</span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     4</span>|<span class="hljs-string">exact_match</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.0143</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0071</span>|<br>|<span class="hljs-string"> - leaderboard_math_num_theory_hard          </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     4</span>|<span class="hljs-string">exact_match</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.0844</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0225</span>|<br>|<span class="hljs-string"> - leaderboard_math_prealgebra_hard          </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     4</span>|<span class="hljs-string">exact_match</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.2902</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0328</span>|<br>|<span class="hljs-string"> - leaderboard_math_precalculus_hard         </span>|<span class="hljs-string">      1</span>|<span class="hljs-string">none  </span>|<span class="hljs-string">     4</span>|<span class="hljs-string">exact_match</span>|<span class="hljs-string">↑  </span>|<span class="hljs-string">0.0370</span>|<span class="hljs-string">±  </span>|<span class="hljs-string">0.0163</span>|<br></code></pre></td></tr></table></figure></p>
+<p>accelerate和parallelize=True两种方法是二选一的, 都是使用多个GPU并行计算. 但是在我的尝试里面, 使用accelerate或者parallelize都挺慢的, 和原始只使用1个gpu一样慢.</p>
+<p>注意: 我上面的输出结果只是给大家看看这个task任务的输出是什么形式, 尽管上面的结果是我真实运行得到的, 但和llama3.1的evaluation部分的数据有一定差距, 我认为可能是因为使用lm-eval-harness第三方库调用的数据和llama3.1官方使用的数据有差别, 或者llama3.1的eval details和tricks我没有实现.</p>
+<h2 id="资料链接"><a href="#资料链接" class="headerlink" title="资料链接"></a>资料链接</h2><p>github meta-llama: <a target="_blank" rel="noopener" href="https://github.com/meta-llama/llama-models/tree/main">https://github.com/meta-llama/llama-models/tree/main</a></p>
+<p>官方给出了Llama3.1的<a target="_blank" rel="noopener" href="https://github.com/meta-llama/llama-models/blob/main/models/llama3_1/MODEL_CARD.md">Model_card</a>, 和<a target="_blank" rel="noopener" href="https://github.com/meta-llama/llama-models/blob/main/models/llama3_1/eval_details.md">eval_details</a>.</p>
+<p>lm-evaluate-harness工具的使用: <a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/671235487">如何使用lm-evaluation-harness零代码评估大模型</a>, <a target="_blank" rel="noopener" href="https://medium.com/@cch.chichieh/llm-%E8%A9%95%E4%BC%B0%E6%95%99%E5%AD%B8-eleutherai-lm-evaluation-harness-42628a4362f7">Medium-LLM评估教学</a>.</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/zh-hans/categories/ML%E5%B8%B8%E8%A7%81%E6%A8%A1%E5%9E%8B/" class="category-chain-item">ML常见模型</a>
+  
+  
+    <span>></span>
+    
+  <a href="/zh-hans/categories/ML%E5%B8%B8%E8%A7%81%E6%A8%A1%E5%9E%8B/llama/" class="category-chain-item">llama</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/zh-hans/tags/llama/" class="print-no-link">#llama</a>
+      
+        <a href="/zh-hans/tags/lm-eval-harness/" class="print-no-link">#lm-eval-harness</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>llama3.1模型的下载和性能测评</div>
+      <div>https://kangkang37.github.io/zh-hans/2024/08/19/llama3-1/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>kq</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年8月19日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/zh-hans/2025/04/17/opticalflow/" title="传统光流算法和代码">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">传统光流算法和代码</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/zh-hans/2024/08/19/peft/" title="综述大模型的参数高效微调(PEFT)方法">
+                        <span class="hidden-mobile">综述大模型的参数高效微调(PEFT)方法</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="" ><span>Kangkang</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/kangkang37" target="_blank" rel="nofollow noopener"><span>GitHub</span></a>     
+    </div>
+  
+  
+    <div class="statistics">
+  
+  
+
+  
+    
+      <span id="leancloud-site-pv-container" style="display: none">
+        点击量: 
+        <span id="leancloud-site-pv"></span>
+         ,
+      </span>
+    
+    
+      <span id="leancloud-site-uv-container" style="display: none">
+        访问人数: 
+        <span id="leancloud-site-uv"></span>
+         
+      </span>
+    
+    
+
+  
+</div>
+
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/zh-hans/js/events.js" ></script>
+<script  src="/zh-hans/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/zh-hans/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            loader : {
+              load: ['ui/lazy']
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.2/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/zh-hans/js/leancloud.js" ></script>
+
+  <script  src="/zh-hans/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/zh-hans/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>

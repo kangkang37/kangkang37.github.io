@@ -1,0 +1,867 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/zh-hans/img/fluid.png">
+  <link rel="icon" href="/zh-hans/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="kangkang">
+  <meta name="keywords" content="hexo, blog, ai, artificial intelligence">
+  
+    <meta name="description" content="tokenizer的原理详解I相关术语 什么是token：token是文本或序列数据中的最小离散单元。在自然语言处理中，一个token可以是一个单词、一个子词（如字母、音节或子词片段），或一个字符，取决于任务和数据的预处理方式。例如，把单词作为最小离散单元，句子”I love deep learning”可以被拆分成4个单词 tokens：[“I”, “love”, “deep”, “learni">
+<meta property="og:type" content="article">
+<meta property="og:title" content="tokenizer的原理I">
+<meta property="og:url" content="https://kangkang37.github.io/zh-hans/2024/07/05/tokenizer/index.html">
+<meta property="og:site_name" content="KQ&#39;s AI Blog">
+<meta property="og:description" content="tokenizer的原理详解I相关术语 什么是token：token是文本或序列数据中的最小离散单元。在自然语言处理中，一个token可以是一个单词、一个子词（如字母、音节或子词片段），或一个字符，取决于任务和数据的预处理方式。例如，把单词作为最小离散单元，句子”I love deep learning”可以被拆分成4个单词 tokens：[“I”, “love”, “deep”, “learni">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://kangkang37.github.io/zh-hans/2024/07/05/tokenizer/tokenizer01.png">
+<meta property="article:published_time" content="2024-07-05T09:34:20.000Z">
+<meta property="article:modified_time" content="2024-07-29T23:24:18.777Z">
+<meta property="article:author" content="kq">
+<meta property="article:tag" content="transformer">
+<meta property="article:tag" content="tokenizer">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://kangkang37.github.io/zh-hans/2024/07/05/tokenizer/tokenizer01.png">
+  
+  
+  
+  <title>tokenizer的原理I - KQ&#39;s AI Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/zh-hans/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/zh-hans/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/zh-hans/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"kangkang37.github.io","root":"/zh-hans/","version":"1.9.7","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Oy95QsXXN5Dq2RLD8evjzYEP-MdYXbMMI","app_key":"g2P9HRXegX1XhaV3or2pH3zk","server_url":null,"path":"window.location.pathname","ignore_local":true}},"search_path":"/zh-hans/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/zh-hans/js/utils.js" ></script>
+  <script  src="/zh-hans/js/color-schema.js" ></script>
+  
+
+  
+
+  
+    <!-- Google tag (gtag.js) -->
+    <script async>
+      if (!Fluid.ctx.dnt) {
+        Fluid.utils.createScript("https://www.googletagmanager.com/gtag/js?id=", function() {
+          window.dataLayer = window.dataLayer || [];
+          function gtag() {
+            dataLayer.push(arguments);
+          }
+          gtag('js', new Date());
+          gtag('config', '');
+        });
+      }
+    </script>
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.3.0"></head>
+
+
+<script src="/zh-hans/js/hexo_resize_image.js"></script> 
+<!-- ## -->
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/zh-hans/">
+      <strong>KQ&#39;s AI Blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/zh-hans/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="https://kangkang37.github.io" target="_self">
+                <i class="iconfont icon-language"></i>
+                <span>language</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/zh-hans/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="tokenizer的原理I"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        kangkang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-07-05 02:34" pubdate>
+          2024年7月5日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          20 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="leancloud-page-views"></span> 次
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">tokenizer的原理I</h1>
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    本文最后更新于 2024年7月29日下午4点24分
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="tokenizer的原理详解I"><a href="#tokenizer的原理详解I" class="headerlink" title="tokenizer的原理详解I"></a>tokenizer的原理详解I</h1><h2 id="相关术语"><a href="#相关术语" class="headerlink" title="相关术语"></a>相关术语</h2><ol>
+<li><p>什么是token：<br>token是文本或序列数据中的最小离散单元。在自然语言处理中，一个token可以是一个单词、一个子词（如字母、音节或子词片段），或一个字符，取决于任务和数据的预处理方式。<br>例如，把单词作为最小离散单元，句子”I love deep learning”可以被拆分成4个单词 tokens：[“I”, “love”, “deep”, “learning”]。  </p>
+</li>
+<li><p>什么是tokenization：<br>tokenization的中文意思是分词，就是把文本划分为一个个tokens的过程。  </p>
+</li>
+<li><p>什么是tokenizer：<br>tokenizer是分词器，或者标记器。是模型中将文本转换为tokens的模块。和tokenization差不多。</p>
+</li>
+<li><p>什么是embedding，中文叫嵌入：<br>embedding就是把token映射到连续的向量空间的方法，得到的向量叫做词向量或者词嵌入。<br>神经网络会将文本序列中的每个token编码为向量表示，以便进行后续的计算和处理。现在除了word embedding，还有sentence embedding。这里我只讲如何实现word embedding。我感觉embedding可以是动词：把token变为向量的这个动作；也可以是名词：得到的向量称为embedding。理解它是什么含义即可。</p>
+</li>
+</ol>
+<h2 id="为什么需要tokenizer"><a href="#为什么需要tokenizer" class="headerlink" title="为什么需要tokenizer"></a>为什么需要tokenizer</h2><p>为了方便，下面的文本默认是英文文本。在很多NLP任务中，输入文本，模型无法直接对string类型的文字处理，需要把它们量化为向量。<br>如何把string变为向量？首先，构建词表vocabulary，词表存储的是所有常见的单元, 假设词表的长度为$L$。把输入文本切分为一个个token，每个token在词表中有一个对应的整型索引，然后把整数索引(一个在范围$0 ~ L-1$的整数),或者是一个长度为$L$的one-hot向量, 变为 $K \times 1$ 的向量, 其中$K&lt;&lt;L$。  </p>
+<p>此时涉及到两个问题：  </p>
+<ol>
+<li>构建词表的单元是什么，即分词粒度。是每个单词word，还是每个字母character，或者其他单元？下面介绍三种粒度。</li>
+<li>整型索引如何转为向量？下面介绍一种word2vec方法，用于把token转为向量。</li>
+</ol>
+<h3 id="word-based-tokenizer"><a href="#word-based-tokenizer" class="headerlink" title="word-based tokenizer"></a>word-based tokenizer</h3><p>为了方便理解整个过程，以word为基本单元。看看基于word的tokenizer如何实现。<br>首先，构建词表是英文中常见单词，假设词表总共有32000个常见的word。然后，把句子切分为一个个word，每个单词$word_i$对应一个0～31999范围的索引$word_{idx}$。如何把索引转为向量，最基本是使用one-hot方法，每个索引变为大小为32000*1的向量，对应索引位置为1，其余位置为0.比如$word_{idx}=0$对应的向量是$[1,0,0..,0,0]$.</p>
+<p>基于word的tokenizer有缺陷：</p>
+<ul>
+<li>词表vocabulary很大，参数多，难训练。英文中除了常见单词，还有很多生僻词，导致每个word对应的one-hot向量的size很大，后续把向量输入给模型进行训练时，参数矩阵很大，训练难。  </li>
+<li>容易OOV。OOV=out of vocabulary，即某些token在词表中查询不到，例如某些拼写错误的词。</li>
+</ul>
+<h3 id="character-based-tokenizer"><a href="#character-based-tokenizer" class="headerlink" title="character-based tokenizer"></a>character-based tokenizer</h3><p>除了把word作为token单元，还可以把每个字母作为token单元。这样词表的长度=26，每个字母可以表示为一个长度为26*1的one-hot向量。<br>以字母为单元的缺陷很明显：</p>
+<ul>
+<li>每个字母不具备任何意义，只有组合到一起才有意义，故以每个字母作为一个向量输入给模型，模型不一定能训练出这个句子的含义。这是最致命的，导致char-based tokenizer方法不可取。</li>
+<li>一个句子包含很多字母，这样向量化后的sequence很长。</li>
+<li>但是中文是可以进行character-based tokenizer的，因为每个汉字具有意义。</li>
+</ul>
+<h3 id="subword-based-tokenizer"><a href="#subword-based-tokenizer" class="headerlink" title="subword-based tokenizer"></a>subword-based tokenizer</h3><p>选择subword作为基本单元，频率高的word不拆分，罕见词拆分为小的有意义的subword。<br>对于后缀，会在前面加上一个特殊标记，比如把’tokenization’拆分为’token’和’##ization’，其中’##’标记’ization’是一个后缀。  </p>
+<p>优点：</p>
+<ul>
+<li>词表的size适中，减少了OOV问题，模型可以理解没见过的单词，比如对pretrain这个单词，即使模型没见过，但是有pre和train两个token，模型也能理解pretrain的意思。</li>
+</ul>
+<p><strong>如何用subword算法构建词表：</strong><br>最常见的是BPE方法 byte pair encoding：<br>参考这个： <a target="_blank" rel="noopener" href="https://www.cnblogs.com/zjuhaohaoxuexi/p/15929039.html">https://www.cnblogs.com/zjuhaohaoxuexi/p/15929039.html</a></p>
+<p>（这里不讲如何构建词表）</p>
+<h2 id="词嵌入-word-embedding"><a href="#词嵌入-word-embedding" class="headerlink" title="词嵌入 word embedding"></a>词嵌入 word embedding</h2><p>上面讲了三种tokenizer方法，分别是基于word，基于character和基于subword。实际代码中一般使用subword方法。<br>在构建好subword词表，并把句子切分为一个个subword后，如何把每个subword变为一个token向量，并且让意思相近的subword对应的向量也距离更近？词嵌入word embedding就是把subword变为词向量的过程。</p>
+<p>假设词表长度=V，即共有V个subword。则每个subword的one-hot向量长度是 $V\times 1$.<br>假设词向量的size是 $K \times 1$ ，即需要把one-hot的 $V \times 1$ 向量转为长度为 $K \times 1$ 的连续向量。一般的，$K=32000,V=768$左右。可见，词向量大大缩小了向量维度，并且词向量是连续向量，不是稀疏的。<br>其中词向量的每个维度表示不同的含义，比如这768个维度中，维度1表示生物，维度2表示会动的物体，维度3表示颜色等等。</p>
+<p>词嵌入的方法：</p>
+<ul>
+<li>predictive基于预测的方法。代表方法：CBoW，Skip-gram</li>
+<li>count-based基于计数的方法。代表方法：Glove vector</li>
+<li>tasked-based基于任务的方法。</li>
+</ul>
+<p>主要介绍CBoW和skip-gram方法。这两个方法都是word2vec方法的具体实现。word2vec方法如字面意思，就是把word转为vector的方法，下面使用的模型很简单，轻量级网络，包含输入层+隐藏层+输出层。</p>
+<h3 id="CBoW方法"><a href="#CBoW方法" class="headerlink" title="CBoW方法"></a>CBoW方法</h3><p>CBoW全称Continuous bag-of-words，CBoW和Skip-gram算法类似，都是基于局部滑动窗口的，利用了局部的上下文特征local context。<br>CBoW是根据上下文预测当前词。假设中心词是$w_t$, 根据其上下文$w_{t-2},w_{t-1},w_{t+1},w_{t+2}$来预测$w_t$。</p>
+<p>模型很简单，输入向量先经过权重矩阵W，再经过权重矩阵W’，然后softmax得到输出。<br>输入：C个上下文单词的one-hot向量；输出：预测中心词的one-hot向量。<br>损失函数：CE，真实label是中心词的真实one-hot向量，预测label是中心词的$V*1$预测向量。</p>
+<p>先看简单的，假设上下文词的个数是1，只输入一个one-hot向量，输出预测向量。<br>输入的 $ V \times 1 $ 向量先经过一个权重矩阵W，W的大小为 $ V \times K $，得到隐藏层向量 $ K \times 1$，再经过权重矩阵W’,size为 $ K \times V$，得到输出向量 $ V \times 1$，再经过softmax，得到概率向量，然后和中心词的真实one-hot计算CE误差。</p>
+<p>如果上下文词的个数是C，即滑动窗口的大小为C+1，一次性输入C个上下文的one-hot，经过W矩阵，得到C个隐藏向量$\{x_1,x_2,..,x_C \}$，<u>计算他们的求和平均值</u>，得到$x_{mean}=\frac{x_1+x_2+..x_C}{C}$,然后经过W’和softmax得到输出。  </p>
+<p>这样，只要用足够的文本训练集，先把文本切分为subword，然后变为一个个one-hot，从头开始移动滑动窗口，每次根据上下文向量来预测中心词向量，从而训练模型权重矩阵W和W’。</p>
+<p>训练好模型后，如果想要知道某一个subword的词向量，只需要把它的one-hot向量经过W矩阵，得到的 $ K \times 1$ 向量就是该subword的词向量。</p>
+<h3 id="skip-gram方法"><a href="#skip-gram方法" class="headerlink" title="skip-gram方法"></a>skip-gram方法</h3><p>上面的CBoW方法是输入上下文向量，预测中心词向量。<br>skip-gram反过来，输入中心词的one-hot向量，经过W矩阵得到 $ K \times 1$的隐藏向量，再经过W’矩阵和softmax得到预测向量 $w_{pred}$, $w_{pred}$会和$w_{t-2},w_{t-1},w_{t+1},w_{t+2}$分别计算CE loss再求和，然后反向传播更新W和W’。</p>
+<h3 id="CBoW和skip-gram对比"><a href="#CBoW和skip-gram对比" class="headerlink" title="CBoW和skip-gram对比"></a>CBoW和skip-gram对比</h3><p>CBoW是输入多个上下文向量，经过hidden层向量后计算平均，再得到输出预测计算loss；<br>skip-gram是输入一个中心词向量，经过hidden层再得到输出后，与所有上下文向量计算loss，loss求和再更新梯度。或者可以理解为，把C个上下文one-hot合并为一个 $ V \times 1$ 向量，其中有C个元素是1，再和输出概率向量计算loss。<br><img src="/zh-hans/2024/07/05/tokenizer/tokenizer01.png" srcset="/zh-hans/img/loading.gif" lazyload alt="word2vec之CBoW和skip-gram方法"></p>
+<h3 id="查表look-up"><a href="#查表look-up" class="headerlink" title="查表look up"></a>查表look up</h3><p>训练好word2vec模型后，把one-hot向量跟W矩阵相乘就得到这个单词的词向量，这个过程也叫做查表look up。<br>通常语义相近的词出现在上下文的概率更大，word2vec模型会把两个语义相近的词的词向量训练的更接近。</p>
+<h1 id="参考："><a href="#参考：" class="headerlink" title="参考："></a>参考：</h1><p>CBoW和skip-gram方法的论文：<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1301.3781">Efficient Estimation of Word Representations in Vector Space</a></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/zh-hans/categories/ML%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/" class="category-chain-item">ML基础知识</a>
+  
+  
+    <span>></span>
+    
+  <a href="/zh-hans/categories/ML%E5%9F%BA%E7%A1%80%E7%9F%A5%E8%AF%86/Tokenizer/" class="category-chain-item">Tokenizer</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/zh-hans/tags/transformer/" class="print-no-link">#transformer</a>
+      
+        <a href="/zh-hans/tags/tokenizer/" class="print-no-link">#tokenizer</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>tokenizer的原理I</div>
+      <div>https://kangkang37.github.io/zh-hans/2024/07/05/tokenizer/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>kangkang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年7月5日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/zh-hans/2024/07/05/positional_encoding/" title="位置编码的原理详解">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">位置编码的原理详解</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/zh-hans/2024/07/05/transformer/" title="浅析transformer的结构">
+                        <span class="hidden-mobile">浅析transformer的结构</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="" ><span>Kangkang</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/kangkang37" target="_blank" rel="nofollow noopener"><span>GitHub</span></a>     
+    </div>
+  
+  
+    <div class="statistics">
+  
+  
+
+  
+    
+      <span id="leancloud-site-pv-container" style="display: none">
+        点击量: 
+        <span id="leancloud-site-pv"></span>
+         ,
+      </span>
+    
+    
+      <span id="leancloud-site-uv-container" style="display: none">
+        访问人数: 
+        <span id="leancloud-site-uv"></span>
+         
+      </span>
+    
+    
+
+  
+</div>
+
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/zh-hans/js/events.js" ></script>
+<script  src="/zh-hans/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/zh-hans/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            loader : {
+              load: ['ui/lazy']
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.2/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/zh-hans/js/leancloud.js" ></script>
+
+  <script  src="/zh-hans/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/zh-hans/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({
+        tex2jax: {
+            inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+            skipTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
+            processEscapes: true
+        }
+    });
+    MathJax.Hub.Queue(function() {
+        var all = MathJax.Hub.getAllJax();
+        for (var i = 0; i < all.length; ++i)
+            all[i].SourceElement().parentNode.className += ' has-jax';
+    });
+</script>
+<script src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+</body>
+</html>
