@@ -24,7 +24,7 @@
 <meta property="og:description" content="Common NLP Interview QuestionsTokenizationQ1. Explain what is a token, a tokenizer, and tokenization.So, a token is basically the smallest piece of text the model works with. It could be a whole word,">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2025-10-03T06:47:55.000Z">
-<meta property="article:modified_time" content="2025-10-03T06:50:29.314Z">
+<meta property="article:modified_time" content="2025-10-03T07:07:25.696Z">
 <meta property="article:author" content="kq">
 <meta property="article:tag" content="NLP">
 <meta name="twitter:card" content="summary_large_image">
@@ -330,7 +330,7 @@
               <p id="updated-time" class="note note-info" style="">
                 
                   
-                    Last updated on October 2, 2025 11:50 PM
+                    Last updated on October 3, 2025 12:07 AM
                   
                 
               </p>
@@ -506,13 +506,13 @@
 <p>The key idea is to solve <strong>internal covariate shift</strong> — when updates in one layer change the input distribution of the next. Normalization acts like a “calibrator.”</p>
 <p>In NLP, the common normalization methods are:</p>
 <ol>
-<li><p><strong>Batch Normalization (BN)</strong><br>Normalizes across the batch dimension, same channel over a batch.<br>👉 Used in early CNN&#x2F;RNN models, but not good when batch size is small.</p>
+<li><p><strong>Batch Normalization (BN)</strong><br>Normalizes across the batch dimension, same channel over a batch.<br>Used in early CNN&#x2F;RNN models, but not good when batch size is small.</p>
 </li>
-<li><p><strong>Layer Normalization (LN)</strong><br>Normalizes across hidden dimensions for each sample independently.<br>👉 This is the most common in NLP, especially in Transformers, since it doesn’t depend on batch size.</p>
+<li><p><strong>Layer Normalization (LN)</strong><br>Normalizes across hidden dimensions for each sample independently.<br>This is the most common in NLP, especially in Transformers, since it doesn’t depend on batch size.</p>
 </li>
-<li><p><strong>Instance Normalization (IN)</strong><br>Normalizes per sample over spatial dimensions.<br>👉 More common in vision; in NLP, rarely used, sometimes for style transfer tasks.</p>
+<li><p><strong>Instance Normalization (IN)</strong><br>Normalizes per sample over spatial dimensions.<br>More common in vision; in NLP, rarely used, sometimes for style transfer tasks.</p>
 </li>
-<li><p><strong>Group Normalization (GN)</strong><br>Splits channels into groups and normalizes inside each group.<br>👉 Less common in NLP, but sometimes used in special architectures.</p>
+<li><p><strong>Group Normalization (GN)</strong><br>Splits channels into groups and normalizes inside each group.<br>Less common in NLP, but sometimes used in special architectures.</p>
 </li>
 </ol>
 <p><strong>Summary</strong>: In NLP, <strong>LayerNorm</strong> is the main one, almost always used in Transformers. BatchNorm was used earlier but is now mostly replaced.</p>
@@ -960,7 +960,7 @@
 <li><strong>RLHF</strong> → aligns outputs with human preferences using reinforcement learning and PPO.</li>
 <li><strong>DPO</strong> → a simpler way to reach alignment, almost as good but with lower cost.</li>
 </ul>
-<h3 id="Q35-Introduce-common-Parameter-Efficient-Fine-Tuning-PEFT-methods"><a href="#Q35-Introduce-common-Parameter-Efficient-Fine-Tuning-PEFT-methods" class="headerlink" title="Q35. Introduce common Parameter-Efficient Fine-Tuning (PEFT) methods."></a>Q35. Introduce common Parameter-Efficient Fine-Tuning (PEFT) methods.</h3><p>Parameter-Efficient Fine-Tuning, or PEFT, is built on a simple idea: we don’t need to retrain all the parameters of a big model every time we face a new task. That would be too costly. Instead, we update only a small number of parameters, often by adding tiny modules or vectors around the model. This makes training much cheaper and switching between tasks much easier.</p>
+<h2 id="PEFT-RL"><a href="#PEFT-RL" class="headerlink" title="PEFT &amp; RL"></a>PEFT &amp; RL</h2><h3 id="Q35-Introduce-common-Parameter-Efficient-Fine-Tuning-PEFT-methods"><a href="#Q35-Introduce-common-Parameter-Efficient-Fine-Tuning-PEFT-methods" class="headerlink" title="Q35. Introduce common Parameter-Efficient Fine-Tuning (PEFT) methods."></a>Q35. Introduce common Parameter-Efficient Fine-Tuning (PEFT) methods.</h3><p>Parameter-Efficient Fine-Tuning, or PEFT, is built on a simple idea: we don’t need to retrain all the parameters of a big model every time we face a new task. That would be too costly. Instead, we update only a small number of parameters, often by adding tiny modules or vectors around the model. This makes training much cheaper and switching between tasks much easier.</p>
 <p>One of the most common methods is <strong>LoRA</strong>. The intuition is that the weight matrices in big models are huge, but the needed changes are usually low-rank. So LoRA adds a small low-rank matrix next to the original weight matrix and only trains this small piece while freezing the big one. This reduces the number of trainable parameters to less than one percent, yet the performance is close to full fine-tuning. That’s why LoRA is so popular in today’s large model applications.</p>
 <p>Another classic method is the <strong>Adapter</strong>. The idea here is to insert a small bottleneck layer into each Transformer block. This layer projects the dimension down and then back up. During training, only the adapter’s parameters are updated. The nice part is that it’s very modular: you can train different adapters for different tasks and plug them in like extensions.</p>
 <p>Then we have <strong>Prefix-tuning</strong>. This method adds trainable prefix vectors to the self-attention in every layer. These prefixes act like extra context and influence the model throughout all layers, not just at the input. Because of this deeper influence, prefix-tuning can sometimes work better on more complex tasks.</p>
